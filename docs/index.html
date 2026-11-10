@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview | PARMCO Group 3</title>
+<meta name="description" content="PARMCO is an iPhone-controlled stepper motor project using a Raspberry Pi 4, an IR sensor and a magnetic encoder.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
+    <nav><a href="index.html" aria-current="page">Overview</a><a href="hardware.html">Hardware</a><a href="software.html">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html">Credits</a></nav>
+  </div>
+</header>
+<main class="wrap">
+
+<section class="hero">
+  <h1>PARMCO: Phone App RP4 Motor Control</h1>
+  <p class="lead">An iPhone app that controls a stepper motor and propeller through a Raspberry Pi 4 over Bluetooth, with speed measured by an IR sensor and angle measured by a magnetic encoder.</p>
+</section>
+
+<h2>What it does</h2>
+<p>PARMCO is the semester project for ECSE 4235. A Nema17 stepper motor turns a two-blade propeller. A Raspberry Pi 4 (RP4) drives the motor through an SN754410NE H-bridge, using an ARM assembly routine for the step timing. An iPhone app talks to the RP4 over Bluetooth Low Energy and is the only way the motor is controlled at the Checkpoint 3 check. The RP4 measures the propeller speed with an IR sensor and the shaft angle with an AS5600 encoder, and it can log everything to a CSV file for analysis.</p>
+
+<div class="grid">
+  <div class="card"><h3>Control from the phone</h3><p>Start and stop, direction, faster and slower, a desired RPM from 10 to 100, calibrate zero, set to zero, angle targets, and Manual or Maintain mode.</p></div>
+  <div class="card"><h3>Two ways to measure</h3><p>An IR sensor counts blades for RPM. A magnetic encoder reads the shaft angle to 0.088°, which is ten times finer than one half-step (0.9°).</p></div>
+  <div class="card"><h3>Logging</h3><p>A 200 Hz CSV log with the specification’s 13 columns, started and stopped from the app, with a Mark button for events.</p></div>
+  <div class="card"><h3>Built with AI</h3><p>Claude wrote the code, schematics and documents. We checked each result on the bench. <a href="ai-process.html">How that went</a>.</p></div>
+</div>
+
+<h2>System overview</h2>
+<figure>
+<svg viewBox="0 0 900 300" role="img" aria-labelledby="dia-t dia-d" class="diagram">
+  <title id="dia-t">PARMCO system block diagram</title>
+  <desc id="dia-d">The iPhone app connects over Bluetooth to the RP4. The RP4 drives the H-bridge and stepper motor. The IR sensor and AS5600 encoder feed back to the RP4.</desc>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+  <g class="box"><rect x="20" y="105" width="150" height="90" rx="8"/><text x="95" y="145">iPhone app</text><text x="95" y="167" class="sub">SwiftUI, CoreBluetooth</text></g>
+  <g class="box"><rect x="290" y="60" width="200" height="180" rx="8"/><text x="390" y="95">Raspberry Pi 4</text><text x="390" y="120" class="sub">control thread (200 Hz)</text><text x="390" y="140" class="sub">motor thread (assembly)</text><text x="390" y="160" class="sub">IR and encoder threads</text><text x="390" y="180" class="sub">log writer, Bluetooth</text><text x="390" y="215" class="sub">libE4235 GPIO library</text></g>
+  <g class="box"><rect x="610" y="20" width="140" height="70" rx="8"/><text x="680" y="50">SN754410NE</text><text x="680" y="70" class="sub">H-bridge, 4N25</text></g>
+  <g class="box"><rect x="780" y="20" width="100" height="70" rx="8"/><text x="830" y="50">Nema17</text><text x="830" y="70" class="sub">stepper</text></g>
+  <g class="box"><rect x="610" y="125" width="140" height="60" rx="8"/><text x="680" y="150">IR sensor</text><text x="680" y="168" class="sub">blade pulses, GPIO25</text></g>
+  <g class="box"><rect x="610" y="215" width="140" height="60" rx="8"/><text x="680" y="240">AS5600 encoder</text><text x="680" y="258" class="sub">angle over I2C</text></g>
+  <path d="M170 150H290" class="line" marker-start="url(#a)" marker-end="url(#a)"/><text x="230" y="140" class="sub">BLE</text>
+  <path d="M490 90H610" class="line" marker-end="url(#a)"/>
+  <path d="M750 55H780" class="line" marker-end="url(#a)"/>
+  <path d="M610 155H490" class="line" marker-end="url(#a)"/>
+  <path d="M610 245H540Q490 245 490 215" class="line" marker-end="url(#a)" fill="none"/>
+</svg>
+<figcaption>Commands flow from the phone to the RP4 and out to the motor. Measurements flow back from the sensors, and the RP4 reports status to the phone every half second.</figcaption>
+</figure>
+
+<h2>Checkpoint status</h2>
+<table>
+<thead><tr><th>Checkpoint</th><th>What it adds</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Motor circuit and keyboard control from the RP4</td><td><span class="pill ok">Passed</span></td></tr>
+<tr><td>2</td><td>IR sensor RPM, Bluetooth link, first phone app, Test A</td><td><span class="pill ok">Passed</span></td></tr>
+<tr><td>3</td><td>Encoder, full app control, logging, Tests A and B</td><td><span class="pill">In progress</span> <small>check on Nov 12</small></td></tr>
+<tr><td>Final</td><td>Maintain mode, feedback hold, Tests A to G, reinstall and re-pair</td><td><span class="pill">Planned</span> <small>Nov 19</small></td></tr>
+</tbody>
+</table>
+
+<h2>Where to go next</h2>
+<ul>
+<li><a href="hardware.html">Hardware</a>: schematic, wiring, how the sensors work.</li>
+<li><a href="software.html">Software</a>: threads, the assembly interface, the control modes and logging.</li>
+<li><a href="app.html">App</a>: the controls and the Bluetooth message format.</li>
+<li><a href="tests.html">Tests</a>: how we checked that the readings are right.</li>
+<li><a href="ai-process.html">AI process</a>: what the AI did, where it was wrong, and how we confirmed results.</li>
+</ul>
+
+</main>
+<footer class="site">
+  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+</footer>
+</body>
+</html>

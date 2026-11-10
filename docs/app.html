@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App | PARMCO Group 3</title>
+<meta name="description" content="The PARMCO iPhone app: controls, Bluetooth link and command list.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
+    <nav><a href="index.html">Overview</a><a href="hardware.html">Hardware</a><a href="software.html">Software</a><a href="app.html" aria-current="page">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html">Credits</a></nav>
+  </div>
+</header>
+<main class="wrap">
+
+<h1>iPhone app</h1>
+<p class="lead">The app is written in Swift with SwiftUI and Apple’s CoreBluetooth framework, and it targets iOS 27. Source is in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/CP3/app/">app folder</a>.</p>
+
+<h2>Screenshots</h2>
+<div class="grid">
+  <figure class="shot"><span class="todo">Add a screenshot of the connection and motor controls</span><figcaption>Connection and motor controls</figcaption></figure>
+  <figure class="shot"><span class="todo">Add a screenshot of the position and logging controls</span><figcaption>Position, mode and logging</figcaption></figure>
+  <figure class="shot"><span class="todo">Add a screenshot of the status section</span><figcaption>Status from the RP4</figcaption></figure>
+</div>
+
+<h2>Controls</h2>
+<ul>
+<li><strong>Bluetooth.</strong> Connect and Disconnect with a colored indicator. On every connection the app and the RP4 return to the defaults: Manual mode, clockwise, 20 RPM, stopped and not calibrated.</li>
+<li><strong>Motor.</strong> Start and stop, direction, faster and slower.</li>
+<li><strong>Desired speed.</strong> An RPM field that rejects values outside 10 to 100 with a red warning, and an over-range unlock that switches off by itself when the motor stops.</li>
+<li><strong>Mode.</strong> Manual or Maintain.</li>
+<li><strong>Position.</strong> Calibrate zero, set to zero and angle target. The last two are dimmed until the RP4 reports that it is calibrated.</li>
+<li><strong>Logging.</strong> A toggle with a label field, a Mark button, and the file name and elapsed time reported by the RP4.</li>
+<li><strong>Status.</strong> IR RPM, encoder RPM, encoder angle, calibration, motor state (running, moving, holding), lost steps, hold-correction count and Maintain re-syncs, plus a Messages list.</li>
+</ul>
+<p>The RP4 is the source of truth: the app shows what the RP4 reports. For example, the over-range unlock turns itself off when the RP4 stops the motor.</p>
+
+<h2>Bluetooth link</h2>
+<p>The RP4 is a Bluetooth Low Energy peripheral that advertises as <code>PARMCO3</code>. We use Bluetooth Low Energy because iOS apps cannot use classic Bluetooth serial. The RP4 side uses BlueZ through the Binc library, and the pairing is “Just Works”, which the iPhone remembers.</p>
+<table>
+<thead><tr><th>Item</th><th>UUID</th><th>Direction</th></tr></thead>
+<tbody>
+<tr><td>Service</td><td><code>4197caae-30bd-46cc-91ea-828cff74be1d</code></td><td></td></tr>
+<tr><td>Command characteristic</td><td><code>4197caaf-30bd-46cc-91ea-828cff74be1d</code></td><td>Phone writes</td></tr>
+<tr><td>Status characteristic</td><td><code>4197cab0-30bd-46cc-91ea-828cff74be1d</code></td><td>RP4 notifies</td></tr>
+</tbody>
+</table>
+
+<h2>Commands</h2>
+<p>Commands are short lines of text. The RP4 prints each one as <code>[phone] …</code> and answers <code>ACK</code> or <code>ERR</code>.</p>
+<table>
+<thead><tr><th>Command</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>PING</code></td><td>Connect handshake; the RP4 stops the motor and restores the defaults</td></tr>
+<tr><td><code>START</code>, <code>STOP</code></td><td>Run at the desired rate; stop, disable the H-bridge, cancel any move and switch the unlock off</td></tr>
+<tr><td><code>DIR CW|CCW</code></td><td>Direction</td></tr>
+<tr><td><code>FASTER</code>, <code>SLOWER</code></td><td>Change the rate by 3%</td></tr>
+<tr><td><code>RPM n</code></td><td>Desired RPM, 10 to 100, or above 100 only with the unlock on</td></tr>
+<tr><td><code>MODE MANUAL|MAINTAIN</code></td><td>Select the mode</td></tr>
+<tr><td><code>CAL</code>, <code>HOME</code>, <code>ANGLE deg</code></td><td>Calibrate zero; set to zero; move to an angle. The last two are refused until calibrated</td></tr>
+<tr><td><code>LOG ON [label]</code>, <code>LOG OFF</code>, <code>MARK text</code></td><td>Logging and event marks</td></tr>
+<tr><td><code>UNLOCK ON|OFF</code></td><td>Over-range unlock</td></tr>
+<tr><td><code>BYE</code></td><td>The app sends this and waits before disconnecting, because iOS can keep the link open after the app cancels</td></tr>
+</tbody>
+</table>
+<p>The full message format is in <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/CP3/docs/protocol.md">protocol.md</a>.</p>
+
+<h2>Installing</h2>
+<p>Open <code>app/PARMCO.xcodeproj</code> in Xcode, choose your team under Signing and Capabilities, select the iPhone and press Run. Free signing lasts about seven days, so we reinstall the app before each check.</p>
+
+</main>
+<footer class="site">
+  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+</footer>
+</body>
+</html>

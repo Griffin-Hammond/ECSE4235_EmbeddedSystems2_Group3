@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credits | PARMCO Group 3</title>
+<meta name="description" content="Libraries, tools and licences used in the PARMCO project.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
+    <nav><a href="index.html">Overview</a><a href="hardware.html">Hardware</a><a href="software.html">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html" aria-current="page">Credits</a></nav>
+  </div>
+</header>
+<main class="wrap">
+
+<h1>Credits and libraries</h1>
+<p class="lead">The project code was written by Claude. These are the libraries and tools it uses, with their licences. The full table is in the software documentation.</p>
+<table>
+<thead><tr><th>Name</th><th>Licence</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>ECSE 4235 class library (libE4235)</td><td>Provided by the instructor</td><td>All RP4 GPIO access, in assembly and C</td></tr>
+<tr><td><a href="https://github.com/weliem/bluez_inc">Binc (bluez_inc)</a> by Martijn van Welie</td><td>MIT</td><td>Bluetooth peripheral on the RP4, vendored unmodified</td></tr>
+<tr><td>GLib / GIO</td><td>LGPL-2.1-or-later</td><td>Event loop and D-Bus client used by Binc</td></tr>
+<tr><td>BlueZ</td><td>GPL-2.0</td><td>The Linux Bluetooth stack on Raspberry Pi OS</td></tr>
+<tr><td>SwiftUI, CoreBluetooth</td><td>Apple SDK</td><td>The iPhone app</td></tr>
+<tr><td><a href="https://github.com/yonaskolb/XcodeGen">XcodeGen</a></td><td>MIT</td><td>Generates the Xcode project from <code>project.yml</code></td></tr>
+</tbody>
+</table>
+<h2>Datasheets</h2>
+<ul>
+<li>Texas Instruments, SN754410 Quadruple Half-H Driver, SLRS007C.</li>
+<li>ams OSRAM, AS5600 12-Bit Programmable Contactless Potentiometer.</li>
+</ul>
+<h2>Course</h2>
+<p>ECSE 4235, PARMCO (Phone App RP4 Motor Control) Final Project, Fall 2026, The University of Georgia.</p>
+
+</main>
+<footer class="site">
+  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+</footer>
+</body>
+</html>

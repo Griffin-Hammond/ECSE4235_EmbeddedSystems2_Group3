@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI process | PARMCO Group 3</title>
+<meta name="description" content="How Claude was used on PARMCO, where it was wrong, and how we confirmed each result.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
+    <nav><a href="index.html">Overview</a><a href="hardware.html">Hardware</a><a href="software.html">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html" aria-current="page">AI process</a><a href="credits.html">Credits</a></nav>
+  </div>
+</header>
+<main class="wrap">
+
+<h1>How we used AI</h1>
+<p class="lead">Claude (Anthropic) is the author of the code, schematics and documents in this project. We told it what each checkpoint required, reviewed its plan, ran everything on our hardware, and gave it real output when something failed. Every session is logged in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/ai-log/">ai-log folder</a>.</p>
+
+<h2>Our process</h2>
+<ol>
+<li>Tell the AI what the checkpoint requires and let it read the specification and ask questions.</li>
+<li>Review and approve its written plan before it writes any code.</li>
+<li>Let it run its own tests on a Mac. These filter out mistakes but cannot test the hardware.</li>
+<li>Run everything on the real hardware, and give the AI the actual output when something is wrong.</li>
+<li>Check results against an independent reference, such as a blade count or the protractor.</li>
+<li>Mark any change a person makes with <code>[HUMAN EDIT]</code> and keep the AI’s original.</li>
+</ol>
+
+<h2>Where the AI was wrong</h2>
+<p>The AI’s explanations were wrong several times, which is why we confirm each one by measuring.</p>
+<table>
+<thead><tr><th>Problem</th><th>What the AI first thought</th><th>What it turned out to be</th></tr></thead>
+<tbody>
+<tr><td>Bluetooth dropped after about 30 s (CP2)</td><td>Phone locking, Wi-Fi interference or a BlueZ and iOS mismatch</td><td>A pairing timeout. Two timed runs both ended near 30 s, and a Bluetooth trace confirmed it.</td></tr>
+<tr><td>60 RPM read 3% to 6% too high (CP2)</td><td>An extra key press, then motor resonance</td><td>The propeller was loose on the shaft. We found it ourselves.</td></tr>
+<tr><td>Encoder program hung with no output (CP3)</td><td>Unknown; the AI had not seen the library’s I2C source</td><td>The library’s I2C module never returned on our RP4. The AI rewrote the bus in software with timeouts.</td></tr>
+<tr><td>App stayed “not calibrated” (CP3)</td><td>Cut-off status lines, then overwritten notifications</td><td>iOS had kept the link open, so the RP4 never saw a connection and sent no status. The clue was a missing log line in the first output.</td></tr>
+<tr><td>Angle targets landed 3° to 6° past the mark (CP3)</td><td>The AI added a software correction map</td><td>The encoder position. We repositioned the hardware and reverted the map.</td></tr>
+</tbody>
+</table>
+
+<h2>How we confirmed results</h2>
+<ul>
+<li><strong>Mac tests</strong> (<code>make sim</code>) check the logic against a simulated rotor and encoder.</li>
+<li><strong>Bench tests</strong> on the RP4 check the sensors, Bluetooth and the motor with real output.</li>
+<li><strong>Independent references</strong> check the results: blade count and slow-motion video for speed, a printed protractor for angle, and a meter on the supply for motor current.</li>
+</ul>
+
+<h2>Authorship</h2>
+<p>Every source file the AI wrote starts with a header ending in “(AI-generated)”, and the vendored Binc files keep their original MIT headers. Any change by a person is wrapped in <code>[HUMAN EDIT]</code> and <code>[END HUMAN EDIT]</code> comments with the AI’s original kept between them. <span class="todo">Confirm the count of human edits, currently none</span></p>
+
+<h2>Team</h2>
+<p>Griffin Hammond and Aakash Patel. We worked together in person on every checkpoint, so each of us can explain every part of the project.</p>
+
+</main>
+<footer class="site">
+  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+</footer>
+</body>
+</html>

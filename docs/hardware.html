@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hardware | PARMCO Group 3</title>
+<meta name="description" content="Schematic, wiring, parts and sensor notes for the PARMCO motor, IR sensor and AS5600 encoder.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
+    <nav><a href="index.html">Overview</a><a href="hardware.html" aria-current="page">Hardware</a><a href="software.html">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html">Credits</a></nav>
+  </div>
+</header>
+<main class="wrap">
+
+<h1>Hardware</h1>
+<p class="lead">The circuit has a motor driver, an optocoupler enable, an IR sensor for speed and an AS5600 encoder for angle. The full schematic, wiring table, assembly instructions and parts list are in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/CP3/hardware/">hardware package</a>.</p>
+
+<h2>Schematic</h2>
+<figure>
+<img src="assets/schematic.png" alt="Schematic: Raspberry Pi 4 header connected to an SN754410NE H-bridge, 4N25 enable, IR sensor module U3, AS5600 encoder module U4 and the bench supply" width="1400">
+<figcaption>Checkpoint 3 schematic (AI-generated). The bench supply provides 5 V (VCC1) and 12 V (VCC2) to the H-bridge. Only the IR sensor and the encoder are powered from the RP4’s 3.3 V pin.</figcaption>
+</figure>
+
+<h2>Main parts</h2>
+<table>
+<thead><tr><th>Part</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td>Raspberry Pi 4 (RP4)</td><td>Runs the control program and the Bluetooth link; all GPIO goes through the class library</td></tr>
+<tr><td>SN754410NE H-bridge (U1)</td><td>Drives the two stepper coils; the built-in clamp diodes handle flyback current [1]</td></tr>
+<tr><td>4N25 optocoupler (U2)</td><td>Enable switch for the H-bridge, driven from GPIO24 through 330 Ω with a 10 kΩ pull-down</td></tr>
+<tr><td>Nema17 stepper (M1)</td><td>Turns the propeller; 400 half-steps per turn, 0.9° each</td></tr>
+<tr><td>IR sensor module (U3)</td><td>LM393 comparator; one pulse per blade on GPIO25</td></tr>
+<tr><td>AS5600 module (U4)</td><td>12-bit magnetic angle sensor on I2C (address 0x36)</td></tr>
+<tr><td>Bench supply (PS1)</td><td>5.0 V for VCC1 and 12.0 V for VCC2</td></tr>
+</tbody>
+</table>
+
+<h2>Motor drive</h2>
+<p>The RP4 sets the four H-bridge inputs (GPIO17, 27, 22 and 23, through 1 kΩ resistors) to one of eight coil patterns in half-step mode. The 4N25 lets the RP4 switch both enable pins off, which removes all coil current. After a position move the motor rests with the coils off, held by the detent torque of the motor.</p>
+
+<h2>IR sensor</h2>
+<p>The IR module sits under the propeller and reads white tape on the underside of the blades, giving two pulses per revolution. Its output pulls up to its own supply, so it is powered from the RP4’s 3.3 V pin, never from 5 V.</p>
+
+<h2>AS5600 encoder</h2>
+<p>A small diametrically magnetised magnet on the end of the motor shaft turns over the AS5600 chip. The chip measures the direction of the magnetic field with a Hall array and reports a 12-bit angle, which is 0.088° per count. Nothing touches the magnet, so the encoder adds no load.</p>
+<table>
+<thead><tr><th>AS5600 pin</th><th>Connects to</th></tr></thead>
+<tbody>
+<tr><td>VCC</td><td>RP4 3.3 V, header pin 1</td></tr>
+<tr><td>GND</td><td>Header pin 9</td></tr>
+<tr><td>SDA</td><td>GPIO2, header pin 3</td></tr>
+<tr><td>SCL</td><td>GPIO3, header pin 5</td></tr>
+<tr><td>DIR</td><td>Header pin 25 (GND); fixes the counting direction</td></tr>
+<tr><td>OUT, PGO</td><td>Not connected</td></tr>
+</tbody>
+</table>
+<p>The air gap between the magnet and the chip is 0.5 to 3 mm, and the magnet has to be centred on the shaft. An off-centre magnet bends the angle reading, so we centre the magnet using the chip’s own magnet-strength readout (AGC and magnitude) and check the result against a printed protractor [2].</p>
+<div class="note"><strong>What went wrong here.</strong> At first the encoder read 3° to 6° low against the protractor at every target. The AI proposed a software correction map, and we fixed the mounting instead. Details are on the <a href="ai-process.html">AI process</a> page.</div>
+
+<h2>References</h2>
+<ol class="refs">
+<li>Texas Instruments, “SN754410 Quadruple Half-H Driver,” SLRS007C.</li>
+<li>ams OSRAM, “AS5600 12-Bit Programmable Contactless Potentiometer,” datasheet.</li>
+</ol>
+
+</main>
+<footer class="site">
+  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software | PARMCO Group 3</title>
+<meta name="description" content="Threads, assembly interface, control modes and logging in the PARMCO RP4 program.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
+    <nav><a href="index.html">Overview</a><a href="hardware.html">Hardware</a><a href="software.html" aria-current="page">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html">Credits</a></nav>
+  </div>
+</header>
+<main class="wrap">
+
+<h1>Software</h1>
+<p class="lead">The RP4 program is written in C, with the H-bridge interface in ARM assembly. The full AI-written documentation, including library attribution and code flags, is in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/CP3/docs/">software documentation</a>.</p>
+
+<h2>Threads</h2>
+<table>
+<thead><tr><th>Thread</th><th>Priority</th><th>Job</th></tr></thead>
+<tbody>
+<tr><td>Motor</td><td>SCHED_FIFO 20, last core</td><td>Runs the assembly step-timing loop on the ARM generic timer</td></tr>
+<tr><td>Control</td><td>SCHED_FIFO 15</td><td>Every 5 ms: reads the latest encoder value, runs the commands and the mode state machine, and hands one row to the logger</td></tr>
+<tr><td>Encoder</td><td>SCHED_FIFO 14</td><td>Reads the AS5600 every 5 ms and checks the magnet once a second</td></tr>
+<tr><td>IR</td><td>SCHED_FIFO 10</td><td>Reads GPIO25 every millisecond and times each blade</td></tr>
+<tr><td>Log writer</td><td>Normal</td><td>Moves rows from a lock-free ring buffer to the CSV file</td></tr>
+<tr><td>Bluetooth</td><td>Normal</td><td>BlueZ traffic, received commands, and a status update every 0.5 s</td></tr>
+</tbody>
+</table>
+<p>The control thread owns all motor state, so a phone command never drives the motor directly. If the phone disconnects, the control thread stops the motor.</p>
+
+<h2>Assembly interface</h2>
+<p>The H-bridge routines are in <code>hbridge.s</code> and call the class library for every GPIO access: <code>HB_Init</code>, <code>HB_Enable</code>, <code>HB_Step</code>, the timed loop <code>HB_RunSteps</code>, and, new at Checkpoint 3, <code>HB_SetIndex</code> and <code>HB_GetIndex</code>. The last two choose a coil pattern without stepping. The feedback hold needs them to restart on the pattern that matches the encoder.</p>
+
+<h2>Measuring speed and angle</h2>
+<ul>
+<li><strong>IR RPM.</strong> One revolution is the time from a blade back to the blade two pulses earlier, so differences between the blades cancel. The value is the median of the last three revolutions and reads 0 after four seconds without a blade.</li>
+<li><strong>Encoder angle.</strong> Calibrate zero stores the current encoder reading as 0°. The angle is unwrapped across turns by taking the shortest way round between 5 ms readings.</li>
+<li><strong>Encoder RPM.</strong> The change in unwrapped angle over a 0.5 s window. At 20 RPM that is 60° of travel, so encoder noise stays below 0.2%.</li>
+<li><strong>Encoder bus.</strong> The class library’s I2C module hung on our RP4, so the program drives the I2C bus itself through the library’s GPIO calls, with every acknowledge checked and every wait limited to 1 ms.</li>
+</ul>
+
+<h2>Control modes</h2>
+<table>
+<thead><tr><th>Mode or feature</th><th>How it works</th></tr></thead>
+<tbody>
+<tr><td>Manual</td><td>Faster, slower and desired RPM change the step rate directly. Faster and slower change it by 3%, and above 100 RPM is refused unless the over-range unlock is on.</td></tr>
+<tr><td>Position moves</td><td>Angle targets and set to zero take the shortest way, measured by the encoder, and correct with up to two extra moves if the blade is a step or more off. Because the encoder is the reference, set to zero still works after lost steps.</td></tr>
+<tr><td>Feedback hold</td><td>After a move the coils are switched off. If the encoder shows the blade more than 1° away for three readings in a row (15 ms), the program sets the coil pattern that matches the encoder, re-enables, moves back and switches off again.</td></tr>
+<tr><td>Maintain</td><td>A sync supervisor restarts the motor at 60% speed if the rotor loses step, and a slow PI trim on the encoder RPM corrects the rate by at most ±15%. Maintain is checked at the final check.</td></tr>
+</tbody>
+</table>
+
+<h2>Logging</h2>
+<p>Turning logging on opens <code>CP3/logs/log_YYYY-MM-DD_HH-MM-SS[_label].csv</code>, with one row every 5 ms (200 Hz). Rows are stamped from the Linux monotonic clock, and a full buffer drops and counts rows instead of making the control loop wait.</p>
+<pre><code>time_s,mode,cmd_rpm,cmd_angle_deg,step_count,step_angle_deg,enc_angle_deg,enc_cum_deg,ir_rpm,enc_rpm,app_rpm,enable,event</code></pre>
+
+<h2>Running it</h2>
+<table>
+<thead><tr><th>Command (in <code>src/</code>)</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>make sim</code></td><td>Runs the Mac tests: motor logic, protocol parser, IR and encoder arithmetic, a simulated I2C bus, and the control thread against a simulated rotor and encoder</td></tr>
+<tr><td><code>make enctest</code></td><td>Encoder bring-up: finds the chip, shows magnet strength, angle, direction and read time</td></tr>
+<tr><td><code>make run</code></td><td>Full program with bench keys</td></tr>
+<tr><td><code>make run-app</code></td><td>Full program with only the app controlling the motor, as at the checks</td></tr>
+</tbody>
+</table>
+
+</main>
+<footer class="site">
+  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+</footer>
+</body>
+</html>
