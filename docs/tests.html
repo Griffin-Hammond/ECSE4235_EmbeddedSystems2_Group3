@@ -3,66 +3,134 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tests | PARMCO Group 3</title>
-<meta name="description" content="Test A (RPM sensing) and Test B (open-loop missed steps) for PARMCO, with the independent checks used.">
+<title>Tests · PARMCO</title>
+<meta name="description" content="PARMCO test results: Test A compares IR-measured RPM with commanded RPM and an independent blade count at 30, 60 and 90 RPM.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="site">
-  <div class="wrap">
-    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
-    <nav><a href="index.html">Overview</a><a href="hardware.html">Hardware</a><a href="software.html">Software</a><a href="app.html">App</a><a href="tests.html" aria-current="page">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html">Credits</a></nav>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html"><strong>PARMCO</strong><span>ECSE 4235 · Group 3</span></a>
+    <nav class="site-nav" aria-label="Site">
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="hardware.html">Hardware</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="app.html">App</a></li>
+        <li><a href="tests.html" aria-current="page">Tests</a></li>
+        <li><a href="process.html">AI process</a></li>
+        <li><a href="credits.html">Credits</a></li>
+      </ul>
+    </nav>
   </div>
 </header>
-<main class="wrap">
 
-<h1>Tests</h1>
-<p class="lead">AI can be confidently wrong, so we check each result against something that works on a different principle. The independent references are a blade count or slow-motion video for speed, and a printed protractor for angle.</p>
+<main>
+  <h1>Tests</h1>
+  <p class="lead">Each test compares what the program commands with what independent measurements show the propeller actually doing.</p>
 
-<h2>Test A: RPM sensing</h2>
-<p>Test A compares the IR RPM, the encoder RPM and the commanded RPM with a blade count. After a start we wait five seconds, record the readings, and count how many times a marked blade passes a protractor mark in 30 seconds (count × 2).</p>
-<h3>Checkpoint 2, from the keyboard</h3>
-<table>
-<thead><tr><th>Target RPM</th><th>Commanded RPM</th><th>IR RPM after 5 s</th><th>IR vs commanded</th><th>Reference RPM</th><th>IR vs reference</th></tr></thead>
-<tbody>
-<tr><td>30</td><td>30.30</td><td>30.3</td><td>0.00 %</td><td>30.00 (blade count)</td><td>+1.00 %</td></tr>
-<tr><td>60</td><td>59.70</td><td>59.7</td><td>0.00 %</td><td>60.00 (blade count)</td><td>−0.50 %</td></tr>
-<tr><td>90</td><td>90.30</td><td>90.4</td><td>+0.11 %</td><td>90.00 (slow-motion video)</td><td>+0.44 %</td></tr>
-</tbody>
-</table>
-<div class="note"><strong>The 60 RPM surprise.</strong> Our first run read 3.4% to 5.4% too high at 60 RPM. The program’s step rate and the signal to the driver were correct, and a hand count agreed with the IR sensor, so the sensor was right and the propeller was really turning too fast. It was loose on the shaft. The independent checks found the cause, and neither of the AI’s first two explanations did.</div>
-<h3>Checkpoint 3, through the app</h3>
-<table>
-<thead><tr><th>Target RPM</th><th>App IR RPM</th><th>App encoder RPM</th><th>Reference RPM</th><th>IR vs reference</th><th>Encoder vs reference</th></tr></thead>
-<tbody>
-<tr><td>30</td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td></tr>
-<tr><td>60</td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td></tr>
-<tr><td>90</td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td></tr>
-</tbody>
-</table>
-<p><span class="todo">Add the measured-against-commanded RPM graph from docs/analysis/test_a.py</span></p>
+  <h2>Test A at Checkpoint 3: through the app, 10 to 100 RPM</h2>
+  <p><span class="badge ok">All 10 speeds within 5%</span></p>
+  <p>From Checkpoint 3 the speed is set from the iPhone app. At each speed from 10 to 100 RPM the team read the app's IR RPM and encoder RPM about 5 s after the start, and counted the marked blade for 30 s (by eye up to 70 RPM, from slow-motion video at 80–100 RPM). The peer check asks that the IR, the encoder and the blade count all agree within 5%.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="num">Commanded RPM</th><th class="num">App IR RPM</th><th class="num">App encoder RPM</th><th class="num">Blade passes in 30 s</th><th class="num">Reference RPM</th><th class="num">Encoder vs reference</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="num">10</td><td class="num">10.0</td><td class="num">10.0</td><td class="num">5</td><td class="num">10.0</td><td class="num">0.00%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">20</td><td class="num">20.0</td><td class="num">19.9</td><td class="num">10</td><td class="num">20.0</td><td class="num">−0.50%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">30</td><td class="num">30.0</td><td class="num">29.9</td><td class="num">15</td><td class="num">30.0</td><td class="num">−0.33%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">40</td><td class="num">40.0</td><td class="num">40.2</td><td class="num">20</td><td class="num">40.0</td><td class="num">+0.50%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">50</td><td class="num">50.0</td><td class="num">50.0</td><td class="num">25</td><td class="num">50.0</td><td class="num">0.00%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">60</td><td class="num">60.0</td><td class="num">60.2</td><td class="num">30</td><td class="num">60.0</td><td class="num">+0.33%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">70</td><td class="num">70.0</td><td class="num">70.2</td><td class="num">35</td><td class="num">70.0</td><td class="num">+0.29%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">80</td><td class="num">80.0</td><td class="num">79.9</td><td class="num">40</td><td class="num">80.0</td><td class="num">−0.12%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">90</td><td class="num">90.0</td><td class="num">90.2</td><td class="num">45</td><td class="num">90.0</td><td class="num">+0.22%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">100</td><td class="num">100.0</td><td class="num">100.1</td><td class="num">50</td><td class="num">100.0</td><td class="num">+0.10%</td><td class="pass">Pass</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figure>
+    <a href="assets/testA_cp3_rpm.png"><img src="assets/testA_cp3_rpm.png" alt="Test A graph: the app's IR and encoder RPM and the blade-count reference all lie on the commanded line from 10 to 100 RPM, and every percent error is within 0.5% of zero, well inside the ±5% band."></a>
+    <figcaption>Measured against commanded speed, with the percent-error panel and the ±5% band. From <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP3/docs/testA_cp3_runsheet.csv">testA_cp3_runsheet.csv</a>, worked out by <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP3/docs/analysis/test_a.py">test_a.py</a>.</figcaption>
+  </figure>
+  <div class="note">
+    <p><strong>Results.</strong> The app's IR RPM matched the blade count at every speed. The encoder RPM was within 0.5% (mean +0.05%, sample standard deviation 0.31%, worst −0.50% at 20 RPM).</p>
+    <p><strong>Measurement limit.</strong> One pass of the marked blade in 30 s is worth 2 RPM, so the count resolves ±20% at 10 RPM and ±2% at 100 RPM. The 0.00% IR errors are below what this reference can resolve. For the final writeup the team will log each speed and use longer counts or video frame counts at low speed.</p>
+    <p><strong>Data.</strong> These results come from the app readings and counts on the run sheet. No logs were taken for this Test A sweep.</p>
+  </div>
 
-<h2>Test B: open-loop missed steps</h2>
-<p>Without feedback a stepper that is pushed too hard loses steps, so the step count stops matching where the shaft really is. From the app, in Manual mode, we turn on the over-range unlock and raise the speed until the motor clearly misses steps, then stop. We compare the blade position on the protractor with the encoder angle and with the step angle the program counted.</p>
-<table>
-<thead><tr><th>Run</th><th>Step angle</th><th>Encoder angle</th><th>Protractor</th><th>Encoder vs protractor</th></tr></thead>
-<tbody>
-<tr><td>1</td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td></tr>
-<tr><td>2</td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td></tr>
-<tr><td>3</td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td><td><span class="todo">add</span></td></tr>
-</tbody>
-</table>
-<p><span class="todo">Add the step angle and encoder angle graph from docs/analysis/test_b.py</span></p>
+  <h2>Test A at Checkpoint 2: IR RPM against commanded and counted RPM</h2>
+  <p><span class="badge ok">Passed at Checkpoint 2</span></p>
+  <p>At about 30, 60 and 90 RPM the team recorded the IR reading 5 s after setting the speed, the highest and lowest IR readings over the next 10 s, and an independent reference: the marked blade counted over 30 s by eye, or from slow-motion video at 90 RPM. Reference RPM = marked-blade passes in 30 s × 2.</p>
+  <p>A row passes when the IR RPM is within 5% of both the commanded RPM and the reference, and the 10-second high and low stay within 5% of the commanded RPM.</p>
 
-<h2>Checking the encoder</h2>
-<p>Agreement between the encoder and itself is not evidence, so the encoder is checked against the protractor. In an early test, the targets 90°, 180° and 270° read 89.91°, 179.56° and 269.74° on the encoder while the protractor showed 94.5°, 183° and 274°. The lost-steps readout showed that the step count was within about 1° of the protractor, so the encoder was the part that was wrong. We repositioned the hardware, and <span class="todo">add the new protractor readings</span>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="num">Target RPM</th>
+          <th class="num">Step rate (steps/s)</th>
+          <th class="num">Commanded RPM</th>
+          <th class="num">IR RPM after 5 s</th>
+          <th class="num">IR high / low over 10 s</th>
+          <th>Reference</th>
+          <th class="num">Marked-blade passes in 30 s</th>
+          <th class="num">Reference RPM</th>
+          <th class="num">IR vs commanded</th>
+          <th class="num">IR vs reference</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="num">30</td><td class="num">201.7</td><td class="num">30.30</td><td class="num">30.3</td><td class="num">30.3 / 30.2</td><td>blade count</td><td class="num">15</td><td class="num">30.00</td><td class="num">0.00%</td><td class="num">+1.00%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">60</td><td class="num">398</td><td class="num">59.70</td><td class="num">59.7</td><td class="num">59.8 / 59.7</td><td>blade count</td><td class="num">30</td><td class="num">60.00</td><td class="num">0.00%</td><td class="num">−0.50%</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">90</td><td class="num">602.1</td><td class="num">90.30</td><td class="num">90.4</td><td class="num">90.4 / 90.2</td><td>slow-motion video</td><td class="num">45</td><td class="num">90.00</td><td class="num">+0.11%</td><td class="num">+0.44%</td><td class="pass">Pass</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Commanded RPM = step rate × 60 ÷ 400. The speeds are slightly off the round targets because the step rate moves in 3% steps. Every row is within 0.11% of commanded and 1.0% of the reference count. Data: <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP2/docs/testA_results.csv">testA_results.csv</a>, checked by <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP2/docs/testA_analyze.py">testA_analyze.py</a>.</p>
 
-<h2>Tests C to G</h2>
-<p>Static angle accuracy, step response, disturbance rejection, the feedback hold, and forced desync are demonstrated at the final check. Their results will be added here.</p>
+  <h3>What went wrong first: a loose propeller</h3>
+  <div class="note">
+    <p>The first Test A runs failed at 60 RPM. The IR read about 63–64 RPM while 59.7 was commanded, yet 30 and 90 RPM agreed exactly. The team and the AI narrowed it down step by step:</p>
+    <ol>
+      <li><strong>Was the IR measurement wrong?</strong> A log of every sensor edge showed clean counting, no missed or extra blades and no sampling gaps, and a hand count of about 63.7 RPM agreed with the IR. The propeller really was turning faster than commanded.</li>
+      <li><strong>Was the program stepping too fast?</strong> The status line was extended to print the step rate actually delivered: 397–399 steps/s, as commanded. An oscilloscope on one H-bridge input read 49.75 Hz, which is exactly 398 steps/s.</li>
+      <li><strong>Was the propeller keeping up with the motor?</strong> The AI added a diagnostic that counts motor steps between successive IR revolutions. It must be 400 if the propeller follows the shaft. It read <strong>372–377</strong>.</li>
+    </ol>
+    <p>The AI's explanation at this point, motor resonance at that one step rate, was wrong. The team found the real cause: <strong>the propeller was loose on the motor shaft</strong>. With it tightened, all three rows passed (the table above). The steps-per-revolution diagnostic had correctly shown that the propeller was not following the motor; the lesson was to check the mechanical coupling before the drive. Checking that the propeller is tight is now part of every speed test, and it matters more at Checkpoint 3 because the encoder magnet must also stay fixed to the shaft.</p>
+    <p>The full account is in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/ai-log/2026-10-20_cp2_session_log.md">CP2 session log</a>.</p>
+  </div>
 
+  <h2>Test B: missed steps and the encoder</h2>
+  <p><span class="badge ok">3 runs, encoder within 2° of the protractor</span></p>
+  <p>In Manual mode with the over-range unlock on, the team raised the speed until the motor could no longer follow, held it there, then stopped. Steps sent while the rotor was not following were lost, so the step count no longer says where the propeller is. The AS5600 encoder should still know: the test checks that its angle agrees with the protractor within 2°. Every run was logged at 200 rows per second.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="num">Run</th><th class="num">Protractor</th><th class="num">Encoder (log)</th><th class="num">Encoder − protractor</th><th class="num">Lasting loss of sync</th><th class="num">Missed steps</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td class="num">1</td><td class="num">226.0°</td><td class="num">227.99°</td><td class="num">+1.99°</td><td class="num">217 RPM</td><td class="num">6892</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">2</td><td class="num">350.0°</td><td class="num">349.19°</td><td class="num">−0.81°</td><td class="num">273 RPM</td><td class="num">5398</td><td class="pass">Pass</td></tr>
+        <tr><td class="num">3</td><td class="num">199.0°</td><td class="num">200.30°</td><td class="num">+1.30°</td><td class="num">229 RPM</td><td class="num">5163</td><td class="pass">Pass</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Encoder minus protractor: mean +0.83°, sample standard deviation 1.46°, worst +1.99° (run 1, close to the limit). The motor lost sync for good at 217–273 RPM, mean 240 RPM, consistent with the stall speed of about 277 RPM measured at Checkpoint 1.</p>
+  <figure>
+    <a href="assets/testB_run1.png"><img src="assets/testB_run1.png" alt="Test B run 1: the commanded step angle and the encoder angle rise together as the speed is ramped up, until about 48 s where the encoder levels off while the step count keeps climbing; the divergence panel shows the gap growing to about 6200 degrees."></a>
+    <figcaption>Run 1: commanded (step count) and measured (encoder) angle, and the gap between them on a log scale. From <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP3/logs/log_2026-11-10_14-14-08.csv">log_2026-11-10_14-14-08.csv</a>, worked out by <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP3/docs/analysis/test_b.py">test_b.py</a>. The other runs' graphs are in <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/CP3/docs">CP3/docs</a>.</figcaption>
+  </figure>
+  <div class="note">
+    <p><strong>Two ways to say when sync was lost.</strong> The specification's definition, the first moment the step angle and the encoder differ by more than one step (0.9°), is met as soon as the motor accelerates: the rotor lags a little behind the steps and then catches up. Each log row also pairs the step count with an encoder reading that can be about 10 ms old, which at speed alone looks like several degrees. The table therefore gives the <em>lasting</em> loss of sync: the point from which the gap stays wider than one coil-pattern cycle (7.2°), which only lost steps can cause. Both are marked on the graphs.</p>
+    <p><strong>Procedure note.</strong> Runs 2 and 3 were not calibrated just before logging, and run 2 started logging while already at 100 RPM. Their encoder-against-protractor results stand; for the final writeup the runs will follow the appendix exactly (calibrate zero, start logging, ramp up from 40 RPM).</p>
+  </div>
 </main>
-<footer class="site">
-  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <p>This site is AI-generated (Claude, Anthropic) for ECSE 4235 PARMCO, Group 3. Any change made by a person is marked [HUMAN EDIT] in the page source.</p>
+    <p><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final">Project files on GitHub</a></p>
+  </div>
 </footer>
 </body>
 </html>

@@ -3,76 +3,155 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Software | PARMCO Group 3</title>
-<meta name="description" content="Threads, assembly interface, control modes and logging in the PARMCO RP4 program.">
+<title>Software · PARMCO</title>
+<meta name="description" content="PARMCO software: Raspberry Pi threads, the ARM assembly H-bridge interface, IR RPM measurement and the Bluetooth protocol.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="site">
-  <div class="wrap">
-    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
-    <nav><a href="index.html">Overview</a><a href="hardware.html">Hardware</a><a href="software.html" aria-current="page">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html">Credits</a></nav>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html"><strong>PARMCO</strong><span>ECSE 4235 · Group 3</span></a>
+    <nav class="site-nav" aria-label="Site">
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="hardware.html">Hardware</a></li>
+        <li><a href="software.html" aria-current="page">Software</a></li>
+        <li><a href="app.html">App</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="process.html">AI process</a></li>
+        <li><a href="credits.html">Credits</a></li>
+      </ul>
+    </nav>
   </div>
 </header>
-<main class="wrap">
 
-<h1>Software</h1>
-<p class="lead">The RP4 program is written in C, with the H-bridge interface in ARM assembly. The full AI-written documentation, including library attribution and code flags, is in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/CP3/docs/">software documentation</a>.</p>
+<main>
+  <h1>Software</h1>
+  <p class="lead">The Raspberry Pi program is C with the H-bridge interface in ARM assembly. It runs the motor, measures speed with the IR sensor, and talks to the iPhone app over Bluetooth Low Energy. This page describes it as checked at Checkpoint 2.</p>
 
-<h2>Threads</h2>
-<table>
-<thead><tr><th>Thread</th><th>Priority</th><th>Job</th></tr></thead>
-<tbody>
-<tr><td>Motor</td><td>SCHED_FIFO 20, last core</td><td>Runs the assembly step-timing loop on the ARM generic timer</td></tr>
-<tr><td>Control</td><td>SCHED_FIFO 15</td><td>Every 5 ms: reads the latest encoder value, runs the commands and the mode state machine, and hands one row to the logger</td></tr>
-<tr><td>Encoder</td><td>SCHED_FIFO 14</td><td>Reads the AS5600 every 5 ms and checks the magnet once a second</td></tr>
-<tr><td>IR</td><td>SCHED_FIFO 10</td><td>Reads GPIO25 every millisecond and times each blade</td></tr>
-<tr><td>Log writer</td><td>Normal</td><td>Moves rows from a lock-free ring buffer to the CSV file</td></tr>
-<tr><td>Bluetooth</td><td>Normal</td><td>BlueZ traffic, received commands, and a status update every 0.5 s</td></tr>
-</tbody>
-</table>
-<p>The control thread owns all motor state, so a phone command never drives the motor directly. If the phone disconnects, the control thread stops the motor.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Part</th><th>Runs on</th><th>Language</th></tr></thead>
+      <tbody>
+        <tr><td>Motor, IR and Bluetooth program</td><td>Raspberry Pi 4, Raspberry Pi OS (32-bit ARM)</td><td>C, with the H-bridge interface in ARM assembly</td></tr>
+        <tr><td>PARMCO app</td><td>iPhone, iOS 27</td><td>Swift (SwiftUI, CoreBluetooth)</td></tr>
+        <tr><td>Bluetooth messages</td><td>both</td><td>short ASCII text lines</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-<h2>Assembly interface</h2>
-<p>The H-bridge routines are in <code>hbridge.s</code> and call the class library for every GPIO access: <code>HB_Init</code>, <code>HB_Enable</code>, <code>HB_Step</code>, the timed loop <code>HB_RunSteps</code>, and, new at Checkpoint 3, <code>HB_SetIndex</code> and <code>HB_GetIndex</code>. The last two choose a coil pattern without stepping. The feedback hold needs them to restart on the pattern that matches the encoder.</p>
+  <h2>Threads</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Thread</th><th>Priority</th><th>Does</th></tr></thead>
+      <tbody>
+        <tr><td>Main</td><td>normal</td><td>Reads key presses, prints the status display and a running status line once a second</td></tr>
+        <tr><td>Motor</td><td>real-time (SCHED_FIFO 20), pinned to the last core</td><td>Runs the assembly step-timing loop while the motor runs; sleeps otherwise</td></tr>
+        <tr><td>IR</td><td>real-time (SCHED_FIFO 10)</td><td>Reads GPIO25 every 1 ms and records each blade</td></tr>
+        <tr><td>Bluetooth</td><td>normal</td><td>Runs the GLib main loop: BlueZ D-Bus traffic, received commands, status every 0.5 s</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Each module protects its shared state with a mutex. Only the Bluetooth thread touches GLib or the Binc library; other threads hand it messages through <code>g_main_context_invoke</code>. The Bluetooth thread blocks all signals, so Ctrl-C always reaches the main thread, which shuts down Bluetooth, then the IR thread, then the motor, leaving the H-bridge disabled.</p>
 
-<h2>Measuring speed and angle</h2>
-<ul>
-<li><strong>IR RPM.</strong> One revolution is the time from a blade back to the blade two pulses earlier, so differences between the blades cancel. The value is the median of the last three revolutions and reads 0 after four seconds without a blade.</li>
-<li><strong>Encoder angle.</strong> Calibrate zero stores the current encoder reading as 0°. The angle is unwrapped across turns by taking the shortest way round between 5 ms readings.</li>
-<li><strong>Encoder RPM.</strong> The change in unwrapped angle over a 0.5 s window. At 20 RPM that is 60° of travel, so encoder noise stays below 0.2%.</li>
-<li><strong>Encoder bus.</strong> The class library’s I2C module hung on our RP4, so the program drives the I2C bus itself through the library’s GPIO calls, with every acknowledge checked and every wait limited to 1 ms.</li>
-</ul>
+  <h2>The H-bridge interface in assembly</h2>
+  <p>The project requires the H-bridge interface to be ARM assembly with all GPIO access through the class library <code>libE4235</code>. <code>hbridge.s</code> provides:</p>
+  <ul>
+    <li><code>HB_Init</code>: sets up the four step pins and the enable pin, writing each pin low before it becomes an output.</li>
+    <li><code>HB_Step</code>: moves one row up or down the eight-row half-step table (see <a href="hardware.html">Hardware</a>) and writes the four inputs.</li>
+    <li><code>HB_Enable</code>: switches the 4N25 enable on or off.</li>
+    <li><code>HB_RunSteps</code>: the step-timing loop.</li>
+  </ul>
+  <h3>Step timing</h3>
+  <p><code>HB_RunSteps</code> uses the ARM generic timer (54 MHz on the Pi 4). Each step is scheduled for an absolute deadline, so the time spent in <code>HB_Step</code> does not change the rate. Linux pauses a real-time thread that never sleeps, so the loop sleeps through the early part of each step period and watches the timer only for the last 200 µs. Measured on the team's Pi at Checkpoint 1: no step more than 100 µs late at up to 3000 steps per second.</p>
 
-<h2>Control modes</h2>
-<table>
-<thead><tr><th>Mode or feature</th><th>How it works</th></tr></thead>
-<tbody>
-<tr><td>Manual</td><td>Faster, slower and desired RPM change the step rate directly. Faster and slower change it by 3%, and above 100 RPM is refused unless the over-range unlock is on.</td></tr>
-<tr><td>Position moves</td><td>Angle targets and set to zero take the shortest way, measured by the encoder, and correct with up to two extra moves if the blade is a step or more off. Because the encoder is the reference, set to zero still works after lost steps.</td></tr>
-<tr><td>Feedback hold</td><td>After a move the coils are switched off. If the encoder shows the blade more than 1° away for three readings in a row (15 ms), the program sets the coil pattern that matches the encoder, re-enables, moves back and switches off again.</td></tr>
-<tr><td>Maintain</td><td>A sync supervisor restarts the motor at 60% speed if the rotor loses step, and a slow PI trim on the encoder RPM corrects the rate by at most ±15%. Maintain is checked at the final check.</td></tr>
-</tbody>
-</table>
+  <h2 id="ir">IR speed measurement</h2>
+  <ul>
+    <li>Sample GPIO25 every 1 ms. A new level must hold for two samples before it counts, which ignores single-sample glitches.</li>
+    <li>Time-stamp each blade arrival with the Linux monotonic clock. Arrivals closer than 5 ms apart (over 6000 RPM) are ignored.</li>
+    <li>The two-blade propeller gives two pulses per revolution, so the time from a blade back to the same blade two pulses earlier is one full revolution: RPM = 60 ÷ that time. Timing whole revolutions cancels any unevenness between the blades.</li>
+    <li>The reported value is the median of the last three revolutions, which rejects one bad count without lagging a steady speed.</li>
+    <li>With no blade for 4 s (or two blade gaps, if longer) the reading drops to 0 and old blade times are discarded.</li>
+  </ul>
+  <p>The 1 ms sampling makes each revolution time uncertain by at most about 0.15% at 90 RPM, well inside Test A's 5% tolerance. At low speed the limit is how often a value arrives, not accuracy: at 30 RPM one revolution takes 2 s.</p>
 
-<h2>Logging</h2>
-<p>Turning logging on opens <code>CP3/logs/log_YYYY-MM-DD_HH-MM-SS[_label].csv</code>, with one row every 5 ms (200 Hz). Rows are stamped from the Linux monotonic clock, and a full buffer drops and counts rows instead of making the control loop wait.</p>
-<pre><code>time_s,mode,cmd_rpm,cmd_angle_deg,step_count,step_angle_deg,enc_angle_deg,enc_cum_deg,ir_rpm,enc_rpm,app_rpm,enable,event</code></pre>
+  <h2>Bluetooth protocol</h2>
+  <p>The Pi is a BLE peripheral advertising as <code>PARMCO3</code>, with one GATT service holding a command characteristic (the phone writes) and a status characteristic (the Pi notifies). Messages are single lines of ASCII text of at most 128 bytes. Pairing is "Just Works": BlueZ asks for an encrypted link soon after a phone connects, and without a pairing agent the link dropped after 30 s, which was found with <code>btmon</code> during bring-up.</p>
 
-<h2>Running it</h2>
-<table>
-<thead><tr><th>Command (in <code>src/</code>)</th><th>What it does</th></tr></thead>
-<tbody>
-<tr><td><code>make sim</code></td><td>Runs the Mac tests: motor logic, protocol parser, IR and encoder arithmetic, a simulated I2C bus, and the control thread against a simulated rotor and encoder</td></tr>
-<tr><td><code>make enctest</code></td><td>Encoder bring-up: finds the chip, shows magnet strength, angle, direction and read time</td></tr>
-<tr><td><code>make run</code></td><td>Full program with bench keys</td></tr>
-<tr><td><code>make run-app</code></td><td>Full program with only the app controlling the motor, as at the checks</td></tr>
-</tbody>
-</table>
+  <h3>Phone to Pi</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Command</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>PING</code>, <code>BYE</code></td><td>Connection check; the app is about to disconnect</td></tr>
+        <tr><td><code>START</code>, <code>STOP</code></td><td>Start or stop; stop also turns off the enable</td></tr>
+        <tr><td><code>DIR CW</code>, <code>DIR CCW</code></td><td>Direction</td></tr>
+        <tr><td><code>FASTER</code>, <code>SLOWER</code></td><td>One speed step in Manual mode</td></tr>
+        <tr><td><code>RPM &lt;n&gt;</code></td><td>Desired RPM, 10–100 (up to 600 with the over-range unlock on)</td></tr>
+        <tr><td><code>MODE MANUAL</code>, <code>MODE MAINTAIN</code></td><td>Speed-control mode</td></tr>
+        <tr><td><code>CAL</code>, <code>HOME</code>, <code>ANGLE &lt;deg&gt;</code></td><td>Calibrate zero, return to zero, go to an angle (the last two need calibration)</td></tr>
+        <tr><td><code>LOG ON [label]</code>, <code>LOG OFF</code>, <code>MARK &lt;text&gt;</code></td><td>CSV logging on the Pi and log markers</td></tr>
+        <tr><td><code>UNLOCK ON</code>, <code>UNLOCK OFF</code></td><td>Over-range unlock for tests B and G; switches off when the motor stops</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Keywords are not case-sensitive. A command with anything wrong is rejected whole; nothing is clamped or guessed.</p>
 
+  <h3>Pi to phone</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Message</th><th>When</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td><code>ACK &lt;command&gt;</code></td><td>Every accepted command</td><td><code>ACK RPM 37.5</code></td></tr>
+        <tr><td><code>ERR &lt;reason&gt;</code></td><td>A rejected command</td><td><code>ERR RPM 150 out of range 10-100</code></td></tr>
+        <tr><td><code>STAT key=value …</code></td><td>Every 0.5 s while connected</td><td><code>STAT en=1 dir=CW run=1 sps=400.0 cmd_rpm=60.0 ir_rpm=59.8</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>At Checkpoint 2 the Pi printed and acknowledged every command but the motor was controlled from the keyboard only, as that check required. The full protocol, with service UUIDs and every status field, is in <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP2/docs/protocol.md">protocol.md</a>.</p>
+
+  <h2>Checkpoint 3: the app in control</h2>
+  <p>From Checkpoint 3 the phone is the only control input. The keyboard keys are kept for bench work only; <code>make run-app</code> ignores them.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Part</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td>Control thread (real time, every 5 ms)</td><td>Owns the motor. Runs the phone's commands and a state machine: stopped, running, moving to an angle, holding. Hands one log row to the logger each step.</td></tr>
+        <tr><td>Encoder thread (real time, every 5 ms)</td><td>Reads the AS5600 and publishes the latest angle. A reading older than 0.1 s counts as an encoder fault, so a stuck read can never freeze motor control.</td></tr>
+        <tr><td>Calibrate zero, set to zero, angle target</td><td>Calibrate stores the encoder angle as 0°. Moves are measured by the encoder, the shortest way round, at the desired RPM, with up to two fix-up moves if a move lands a step or more off. Because they use the encoder, set to zero still works after the motor has lost steps.</td></tr>
+        <tr><td>Feedback hold</td><td>After a move the H-bridge is switched off. If the blade is pushed more than 1° away, the program applies the coil pattern that matches the encoder angle (with the new assembly routine <code>HB_SetIndex</code>), steps back, and switches off again. Matching the pattern avoids landing a whole 7.2° pattern cycle away.</td></tr>
+        <tr><td>Maintain</td><td>Uses the encoder RPM. If the rotor falls more than 3.6° out of step it restarts in step and ramps back up; otherwise a gentle speed trim of at most ±15%.</td></tr>
+        <tr><td>Logging</td><td>The specification's 13 columns at 200 rows per second, through a lock-free buffer and a separate writer thread, so file writes never delay control.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">
+    <p><strong>Bugs found on the bench and fixed.</strong> The Pi never sent status to a phone whose Bluetooth link was already open when the program started (iOS keeps a paired link open), so the app stayed "not calibrated" while commands still worked. The Pi now asks Bluetooth which phones are connected at start-up. Separately, several status notifications sent back to back could overwrite each other on the iPhone, so the whole status now goes in one notification.</p>
+    <p>Mac tests run the real control code against a simulated motor and encoder, including nudges, lost steps and a disconnected phone. Details: <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP3/docs/software.md">CP3 software.md</a> and <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP3/docs/protocol.md">protocol.md</a>.</p>
+  </div>
+
+  <h2>Building and testing</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Command (in <code>src/</code>)</th><th>Where</th><th>Checks</th></tr></thead>
+      <tbody>
+        <tr><td><code>make sim</code></td><td>Mac</td><td>Motor logic, the protocol parser and the IR arithmetic, with stand-ins for the hardware</td></tr>
+        <tr><td><code>make asmcheck</code></td><td>Mac</td><td><code>hbridge.s</code> assembles for ARMv7</td></tr>
+        <tr><td><code>make timercheck</code></td><td>Pi</td><td>Generic timer accuracy and step lateness</td></tr>
+        <tr><td><code>make bletest</code></td><td>Pi + phone</td><td>Advertising, connecting, commands in, replies out</td></tr>
+        <tr><td><code>make irtest</code></td><td>Pi</td><td>Two counts per propeller turn by hand</td></tr>
+        <tr><td><code>make run</code></td><td>Pi</td><td>The full program</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The complete software documentation is in <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP2/docs/software.md">software.md</a> and the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP2/docs/PARMCO_CP2_Software_Documentation.pdf">CP2 software PDF</a>. Libraries are listed on <a href="credits.html">Credits</a>.</p>
 </main>
-<footer class="site">
-  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <p>This site is AI-generated (Claude, Anthropic) for ECSE 4235 PARMCO, Group 3. Any change made by a person is marked [HUMAN EDIT] in the page source.</p>
+    <p><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final">Project files on GitHub</a></p>
+  </div>
 </footer>
 </body>
 </html>

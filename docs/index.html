@@ -3,78 +3,215 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Overview | PARMCO Group 3</title>
-<meta name="description" content="PARMCO is an iPhone-controlled stepper motor project using a Raspberry Pi 4, an IR sensor and a magnetic encoder.">
+<title>PARMCO · Group 3</title>
+<meta name="description" content="PARMCO: an iPhone app controlling a Raspberry Pi 4 stepper motor drive over Bluetooth Low Energy. ECSE 4235 class project, Group 3.">
 <link rel="stylesheet" href="style.css">
+<style>
+  .sysdiag .box { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+  .sysdiag .box.sense { stroke: var(--muted); }
+  .sysdiag .box.future { stroke: var(--warn); stroke-dasharray: 6 4; }
+  .sysdiag .wire { stroke: var(--text); stroke-width: 1.6; fill: none; }
+  .sysdiag .wire.fb { stroke: var(--muted); }
+  .sysdiag .wire.future { stroke: var(--warn); stroke-dasharray: 6 4; }
+  .sysdiag .head { fill: var(--text); }
+  .sysdiag .head.fb { fill: var(--muted); }
+  .sysdiag .head.future { fill: var(--warn); }
+  .sysdiag text { fill: var(--text); font: 600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  .sysdiag text.sub { fill: var(--muted); font-weight: 400; font-size: 12px; }
+  .sysdiag text.lbl { fill: var(--muted); font-weight: 600; font-size: 12px; }
+  .sysdiag .tall { display: none; }
+  @media (max-width: 600px) {
+    .sysdiag .wide { display: none; }
+    .sysdiag .tall { display: block; max-width: 380px; margin: 0 auto; }
+  }
+</style>
 </head>
 <body>
-<header class="site">
-  <div class="wrap">
-    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
-    <nav><a href="index.html" aria-current="page">Overview</a><a href="hardware.html">Hardware</a><a href="software.html">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html">Credits</a></nav>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html"><strong>PARMCO</strong><span>ECSE 4235 · Group 3</span></a>
+    <nav class="site-nav" aria-label="Site">
+      <ul>
+        <li><a href="index.html" aria-current="page">Overview</a></li>
+        <li><a href="hardware.html">Hardware</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="app.html">App</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="process.html">AI process</a></li>
+        <li><a href="credits.html">Credits</a></li>
+      </ul>
+    </nav>
   </div>
 </header>
-<main class="wrap">
 
-<section class="hero">
-  <h1>PARMCO: Phone App RP4 Motor Control</h1>
-  <p class="lead">An iPhone app that controls a stepper motor and propeller through a Raspberry Pi 4 over Bluetooth, with speed measured by an IR sensor and angle measured by a magnetic encoder.</p>
-</section>
+<main>
+  <h1>PARMCO: a phone-controlled stepper motor</h1>
+  <p class="lead">An iPhone app talks over Bluetooth Low Energy to a Raspberry Pi 4, which drives a Nema17 stepper motor with a propeller through an H-bridge. An IR sensor, and from Checkpoint 3 an AS5600 magnetic encoder, measure what the propeller is really doing.</p>
 
-<h2>What it does</h2>
-<p>PARMCO is the semester project for ECSE 4235. A Nema17 stepper motor turns a two-blade propeller. A Raspberry Pi 4 (RP4) drives the motor through an SN754410NE H-bridge, using an ARM assembly routine for the step timing. An iPhone app talks to the RP4 over Bluetooth Low Energy and is the only way the motor is controlled at the Checkpoint 3 check. The RP4 measures the propeller speed with an IR sensor and the shaft angle with an AS5600 encoder, and it can log everything to a CSV file for analysis.</p>
+  <div class="grid">
+    <div class="card">
+      <h3>Control from the phone</h3>
+      <p>Start, stop, direction, faster/slower, desired RPM (10–100), Manual or Maintain mode, calibrate zero and angle targets, and logging, all from a SwiftUI app.</p>
+    </div>
+    <div class="card">
+      <h3>Drive in assembly</h3>
+      <p>The H-bridge step routine and the step-timing loop are ARM assembly on the Pi, with every GPIO access through the class library <code>libE4235</code>.</p>
+    </div>
+    <div class="card">
+      <h3>Measured, not assumed</h3>
+      <p>Speed is checked independently of the step commands: the IR sensor times whole propeller revolutions, and the encoder will report angle and speed directly.</p>
+    </div>
+  </div>
 
-<div class="grid">
-  <div class="card"><h3>Control from the phone</h3><p>Start and stop, direction, faster and slower, a desired RPM from 10 to 100, calibrate zero, set to zero, angle targets, and Manual or Maintain mode.</p></div>
-  <div class="card"><h3>Two ways to measure</h3><p>An IR sensor counts blades for RPM. A magnetic encoder reads the shaft angle to 0.088°, which is ten times finer than one half-step (0.9°).</p></div>
-  <div class="card"><h3>Logging</h3><p>A 200 Hz CSV log with the specification’s 13 columns, started and stopped from the app, with a Mark button for events.</p></div>
-  <div class="card"><h3>Built with AI</h3><p>Claude wrote the code, schematics and documents. We checked each result on the bench. <a href="ai-process.html">How that went</a>.</p></div>
-</div>
+  <h2>How the pieces connect</h2>
+  <figure class="diagram sysdiag">
+    <svg class="wide" viewBox="0 0 800 350" role="img" aria-labelledby="sysd-wide-t">
+      <title id="sysd-wide-t">System diagram: iPhone app to Raspberry Pi 4 over BLE; Pi drives the SN754410 H-bridge with four step lines and its enable through a 4N25; the H-bridge drives the Nema17 motor; the IR sensor and the AS5600 encoder feed back to the Pi.</title>
+      <defs>
+        <marker id="aw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="awf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head fb" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="awx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head future" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
 
-<h2>System overview</h2>
-<figure>
-<svg viewBox="0 0 900 300" role="img" aria-labelledby="dia-t dia-d" class="diagram">
-  <title id="dia-t">PARMCO system block diagram</title>
-  <desc id="dia-d">The iPhone app connects over Bluetooth to the RP4. The RP4 drives the H-bridge and stepper motor. The IR sensor and AS5600 encoder feed back to the RP4.</desc>
-  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
-  <g class="box"><rect x="20" y="105" width="150" height="90" rx="8"/><text x="95" y="145">iPhone app</text><text x="95" y="167" class="sub">SwiftUI, CoreBluetooth</text></g>
-  <g class="box"><rect x="290" y="60" width="200" height="180" rx="8"/><text x="390" y="95">Raspberry Pi 4</text><text x="390" y="120" class="sub">control thread (200 Hz)</text><text x="390" y="140" class="sub">motor thread (assembly)</text><text x="390" y="160" class="sub">IR and encoder threads</text><text x="390" y="180" class="sub">log writer, Bluetooth</text><text x="390" y="215" class="sub">libE4235 GPIO library</text></g>
-  <g class="box"><rect x="610" y="20" width="140" height="70" rx="8"/><text x="680" y="50">SN754410NE</text><text x="680" y="70" class="sub">H-bridge, 4N25</text></g>
-  <g class="box"><rect x="780" y="20" width="100" height="70" rx="8"/><text x="830" y="50">Nema17</text><text x="830" y="70" class="sub">stepper</text></g>
-  <g class="box"><rect x="610" y="125" width="140" height="60" rx="8"/><text x="680" y="150">IR sensor</text><text x="680" y="168" class="sub">blade pulses, GPIO25</text></g>
-  <g class="box"><rect x="610" y="215" width="140" height="60" rx="8"/><text x="680" y="240">AS5600 encoder</text><text x="680" y="258" class="sub">angle over I2C</text></g>
-  <path d="M170 150H290" class="line" marker-start="url(#a)" marker-end="url(#a)"/><text x="230" y="140" class="sub">BLE</text>
-  <path d="M490 90H610" class="line" marker-end="url(#a)"/>
-  <path d="M750 55H780" class="line" marker-end="url(#a)"/>
-  <path d="M610 155H490" class="line" marker-end="url(#a)"/>
-  <path d="M610 245H540Q490 245 490 215" class="line" marker-end="url(#a)" fill="none"/>
-</svg>
-<figcaption>Commands flow from the phone to the RP4 and out to the motor. Measurements flow back from the sensors, and the RP4 reports status to the phone every half second.</figcaption>
-</figure>
+      <rect class="box sense" x="480" y="6" width="150" height="38" rx="6"/>
+      <text x="555" y="30" text-anchor="middle" class="sub">Bench supply 5 V · 12 V</text>
+      <path class="wire fb" d="M555 44 V68" marker-end="url(#awf)"/>
 
-<h2>Checkpoint status</h2>
-<table>
-<thead><tr><th>Checkpoint</th><th>What it adds</th><th>Status</th></tr></thead>
-<tbody>
-<tr><td>1</td><td>Motor circuit and keyboard control from the RP4</td><td><span class="pill ok">Passed</span></td></tr>
-<tr><td>2</td><td>IR sensor RPM, Bluetooth link, first phone app, Test A</td><td><span class="pill ok">Passed</span></td></tr>
-<tr><td>3</td><td>Encoder, full app control, logging, Tests A and B</td><td><span class="pill">In progress</span> <small>check on Nov 12</small></td></tr>
-<tr><td>Final</td><td>Maintain mode, feedback hold, Tests A to G, reinstall and re-pair</td><td><span class="pill">Planned</span> <small>Nov 19</small></td></tr>
-</tbody>
-</table>
+      <rect class="box" x="10" y="70" width="140" height="70" rx="8"/>
+      <text x="80" y="100" text-anchor="middle">iPhone app</text>
+      <text x="80" y="120" text-anchor="middle" class="sub">SwiftUI · CoreBluetooth</text>
 
-<h2>Where to go next</h2>
-<ul>
-<li><a href="hardware.html">Hardware</a>: schematic, wiring, how the sensors work.</li>
-<li><a href="software.html">Software</a>: threads, the assembly interface, the control modes and logging.</li>
-<li><a href="app.html">App</a>: the controls and the Bluetooth message format.</li>
-<li><a href="tests.html">Tests</a>: how we checked that the readings are right.</li>
-<li><a href="ai-process.html">AI process</a>: what the AI did, where it was wrong, and how we confirmed results.</li>
-</ul>
+      <rect class="box" x="230" y="70" width="170" height="140" rx="8"/>
+      <text x="315" y="110" text-anchor="middle">Raspberry Pi 4</text>
+      <text x="315" y="132" text-anchor="middle" class="sub">C + ARM assembly</text>
+      <text x="315" y="150" text-anchor="middle" class="sub">BlueZ · libE4235 GPIO</text>
 
+      <rect class="box" x="480" y="70" width="150" height="70" rx="8"/>
+      <text x="555" y="100" text-anchor="middle">SN754410NE</text>
+      <text x="555" y="120" text-anchor="middle" class="sub">dual H-bridge</text>
+
+      <rect class="box" x="480" y="170" width="150" height="44" rx="8"/>
+      <text x="555" y="197" text-anchor="middle">4N25 enable</text>
+
+      <rect class="box" x="690" y="70" width="100" height="70" rx="8"/>
+      <text x="740" y="100" text-anchor="middle">Nema17</text>
+      <text x="740" y="120" text-anchor="middle" class="sub">+ propeller</text>
+
+      <rect class="box sense" x="560" y="250" width="110" height="50" rx="8"/>
+      <text x="615" y="280" text-anchor="middle">IR sensor</text>
+
+      <rect class="box future" x="690" y="250" width="100" height="50" rx="8"/>
+      <text x="740" y="273" text-anchor="middle">AS5600</text>
+      <text x="740" y="291" text-anchor="middle" class="sub">encoder · CP3</text>
+
+      <path class="wire" d="M150 105 H228" marker-start="url(#aw)" marker-end="url(#aw)"/>
+      <text x="190" y="97" text-anchor="middle" class="lbl">BLE</text>
+
+      <path class="wire" d="M400 100 H478" marker-end="url(#aw)"/>
+      <text x="440" y="92" text-anchor="middle" class="lbl">step ×4</text>
+
+      <path class="wire" d="M400 192 H478" marker-end="url(#aw)"/>
+      <text x="440" y="184" text-anchor="middle" class="lbl">GPIO24</text>
+
+      <path class="wire" d="M555 170 V142" marker-end="url(#aw)"/>
+      <text x="563" y="160" class="lbl">EN</text>
+
+      <path class="wire" d="M630 105 H688" marker-end="url(#aw)"/>
+      <text x="659" y="97" text-anchor="middle" class="lbl">coils</text>
+
+      <path class="wire fb" d="M715 140 L630 248" marker-end="url(#awf)"/>
+      <text x="662" y="190" text-anchor="end" class="lbl">blades</text>
+      <path class="wire future" d="M760 140 V248" marker-end="url(#awx)"/>
+      <text x="752" y="200" text-anchor="end" class="lbl">magnet</text>
+
+      <path class="wire fb" d="M560 275 H345 V212" marker-end="url(#awf)"/>
+      <text x="452" y="268" text-anchor="middle" class="lbl">GPIO25</text>
+      <path class="wire future" d="M740 300 V330 H285 V212" marker-end="url(#awx)"/>
+      <text x="512" y="323" text-anchor="middle" class="lbl">I²C, GPIO2/3</text>
+    </svg>
+
+    <svg class="tall" viewBox="0 0 360 500" role="img" aria-labelledby="sysd-tall-t">
+      <title id="sysd-tall-t">System diagram, stacked: iPhone app, BLE, Raspberry Pi 4, then the H-bridge and 4N25 enable, the Nema17 motor, and the IR sensor and AS5600 encoder feeding back to the Pi.</title>
+      <defs>
+        <marker id="awt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="awtf" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head fb" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="awtx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="head future" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+
+      <rect class="box" x="80" y="8" width="200" height="56" rx="8"/>
+      <text x="180" y="33" text-anchor="middle">iPhone app</text>
+      <text x="180" y="51" text-anchor="middle" class="sub">SwiftUI · CoreBluetooth</text>
+
+      <path class="wire" d="M180 66 V108" marker-start="url(#awt)" marker-end="url(#awt)"/>
+      <text x="190" y="92" class="lbl">BLE</text>
+
+      <rect class="box" x="80" y="110" width="200" height="70" rx="8"/>
+      <text x="180" y="138" text-anchor="middle">Raspberry Pi 4</text>
+      <text x="180" y="158" text-anchor="middle" class="sub">C + ARM assembly · libE4235</text>
+
+      <path class="wire" d="M100 180 V228" marker-end="url(#awt)"/>
+      <text x="108" y="210" class="lbl">step ×4</text>
+      <path class="wire" d="M260 180 V228" marker-end="url(#awt)"/>
+      <text x="268" y="210" class="lbl">GPIO24</text>
+
+      <rect class="box" x="20" y="230" width="160" height="56" rx="8"/>
+      <text x="100" y="255" text-anchor="middle">SN754410NE</text>
+      <text x="100" y="273" text-anchor="middle" class="sub">H-bridge · 5 V / 12 V</text>
+
+      <rect class="box" x="210" y="230" width="130" height="56" rx="8"/>
+      <text x="275" y="263" text-anchor="middle">4N25 enable</text>
+      <path class="wire" d="M210 258 H182" marker-end="url(#awt)"/>
+      <text x="196" y="250" text-anchor="middle" class="lbl">EN</text>
+
+      <path class="wire" d="M100 286 V318" marker-end="url(#awt)"/>
+      <text x="108" y="307" class="lbl">coils</text>
+
+      <rect class="box" x="20" y="320" width="160" height="56" rx="8"/>
+      <text x="100" y="345" text-anchor="middle">Nema17</text>
+      <text x="100" y="363" text-anchor="middle" class="sub">+ propeller</text>
+
+      <path class="wire fb" d="M100 376 V418" marker-end="url(#awtf)"/>
+      <text x="108" y="402" class="lbl">blades</text>
+      <path class="wire future" d="M180 360 L262 418" marker-end="url(#awtx)"/>
+      <text x="232" y="380" class="lbl">magnet</text>
+
+      <rect class="box sense" x="20" y="420" width="160" height="56" rx="8"/>
+      <text x="100" y="445" text-anchor="middle">IR sensor</text>
+      <text x="100" y="463" text-anchor="middle" class="sub">to Pi GPIO25</text>
+
+      <rect class="box" x="200" y="420" width="140" height="56" rx="8"/>
+      <text x="270" y="445" text-anchor="middle">AS5600 encoder</text>
+      <text x="270" y="463" text-anchor="middle" class="sub">to Pi I²C GPIO2/3</text>
+
+      <path class="wire fb" d="M20 448 H8 V140 H78" marker-end="url(#awtf)"/>
+      <path class="wire fb" d="M340 448 H352 V140 H282" marker-end="url(#awtf)"/>
+    </svg>
+    <figcaption>Every part shown is built and working; the AS5600 encoder was added at Checkpoint 3. Details on the <a href="hardware.html">Hardware</a> and <a href="software.html">Software</a> pages.</figcaption>
+  </figure>
+
+  <h2>Checkpoint status</h2>
+  <ul class="status-list">
+    <li><span class="badge ok">Passed</span><span class="what"><strong>Checkpoint 1</strong>: H-bridge circuit with the 4N25 fail-safe enable; assembly step routine; speed and direction from the keyboard.</span></li>
+    <li><span class="badge ok">Passed</span><span class="what"><strong>Checkpoint 2</strong>: IR RPM measurement, Bluetooth link to the iPhone app, Test A at 30, 60 and 90 RPM. See <a href="tests.html">Tests</a>.</span></li>
+    <li><span class="badge wip">Checked Nov 12</span><span class="what"><strong>Checkpoint 3</strong>: the app is the only control input; AS5600 encoder; calibrate zero, set to zero and angle targets; feedback hold with the coils off; Maintain mode; CSV logging; Test A through the app at 10–100 RPM and Test B, all passing in the team's runs. See <a href="tests.html">Tests</a>.</span></li>
+    <li><span class="badge todo">Upcoming</span><span class="what"><strong>Final check</strong> (Nov 19, 2026): the complete system, starting on its own at power-up.</span></li>
+  </ul>
+
+  <h2>About this project</h2>
+  <p>PARMCO is the semester project for ECSE 4235 at the University of Georgia, fall 2026. Under the course rules an AI (Claude, by Anthropic) is the primary author of the code, the documentation and this site; the team builds the hardware, runs every test on the bench and reports the results back. How that works is described on the <a href="process.html">AI process</a> page.</p>
+  <p>Source code and documents are in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final">Projects/Final</a> folder of the group repository.</p>
+
+  <!-- Team names go here, added by the team as a marked human edit, for example:
+       [HUMAN EDIT] name, date, reason
+       <h2>Team</h2> <p>...</p>
+       [END HUMAN EDIT] -->
 </main>
-<footer class="site">
-  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <p>This site is AI-generated (Claude, Anthropic) for ECSE 4235 PARMCO, Group 3. Any change made by a person is marked [HUMAN EDIT] in the page source.</p>
+    <p><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final">Project files on GitHub</a></p>
+  </div>
 </footer>
 </body>
 </html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Process · PARMCO</title>
+<meta name="description" content="How PARMCO was built with an AI as primary author, how results were confirmed on the real hardware, and where the AI interaction logs are.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html"><strong>PARMCO</strong><span>ECSE 4235 · Group 3</span></a>
+    <nav class="site-nav" aria-label="Site">
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="hardware.html">Hardware</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="app.html">App</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="process.html" aria-current="page">AI process</a></li>
+        <li><a href="credits.html">Credits</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <h1>How the AI was used</h1>
+  <p class="lead">Under the course rules an AI is the primary author of the code, the documentation and this website. The team owns the hardware, the decisions and the evidence: every claim that matters is checked on the real circuit.</p>
+
+  <h2>Who does what</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>The AI writes</h3>
+      <p>The Pi program in C and ARM assembly, the iPhone app, the schematic and wiring table, the documentation, the analysis scripts and this site. Tool: Claude Code (Anthropic), model Claude Opus 5.5.</p>
+    </div>
+    <div class="card">
+      <h3>The team decides</h3>
+      <p>Answers the AI's questions before each plan, approves or changes the plan, and makes the design choices the plan leaves open.</p>
+    </div>
+    <div class="card">
+      <h3>The team verifies</h3>
+      <p>Builds the circuit, runs every program on the Pi, takes the measurements and test data, and reports the results back to the AI.</p>
+    </div>
+  </div>
+
+  <h2>The working cycle</h2>
+  <ol>
+    <li><strong>Plan.</strong> At the start of each checkpoint the AI reads the specification and the existing code, asks the team its open questions, and writes a plan. The approved plan is saved in the <code>ai-log</code> folder.</li>
+    <li><strong>Build.</strong> The AI writes the code and documents on a Mac and checks what it can there: <code>make sim</code> runs the motor logic, the protocol parser and the IR arithmetic against stand-ins for the hardware, and <code>make asmcheck</code> confirms the assembly builds for ARM.</li>
+    <li><strong>Run on the Pi.</strong> The program only builds and runs on the Raspberry Pi, so the team pushes to GitHub, pulls on the Pi, and runs it on the circuit. Bring-up programs (<code>timercheck</code>, <code>bletest</code>, <code>irtest</code>) test one piece at a time.</li>
+    <li><strong>Report back.</strong> The team brings back what actually happened: program output, meter and oscilloscope readings, hand counts, logs. The AI analyses it and changes the code or the documents.</li>
+    <li><strong>Log.</strong> Each session is written up in <code>ai-log</code>: what was asked, what the AI read, what it produced, where it differed from the plan, and what the team found on the bench.</li>
+  </ol>
+
+  <h2>Confirmed on hardware, not assumed</h2>
+  <p>Some examples from the logs of results that came from the bench rather than from the AI:</p>
+  <ul>
+    <li><strong>Step timing:</strong> the AI's first plan gave the timing thread real-time priority. It then found that Linux pauses a real-time thread that never sleeps, so at Checkpoint 1 the loop ran at normal priority pinned to one core; since Checkpoint 2 it runs at real-time priority and sleeps through the early part of each step period. The team's Checkpoint 1 measurement on the Pi: no step more than 100 µs late at up to 3000 steps/s.</li>
+    <li><strong>Flyback diodes:</strong> the AI first said the H-bridge needed external diodes. Re-reading the current datasheet showed internal clamp diodes rated to 1 A; the logs record the correction.</li>
+    <li><strong>Bluetooth dropping after 30 s:</strong> traced with <code>btmon</code> on the Pi to an unanswered pairing request, fixed with a "Just Works" pairing agent.</li>
+    <li><strong>The 60 RPM over-reading:</strong> the AI's diagnostics showed the propeller was not following the motor, but its explanation was wrong; the team found a loose propeller. See <a href="tests.html">Tests</a>.</li>
+  </ul>
+
+  <h2>Marking human edits</h2>
+  <p>Every source file the AI wrote starts with a header comment ending in <code>(AI-generated)</code>. Any change made by a person is wrapped in <code>[HUMAN EDIT] name, date, reason</code> and <code>[END HUMAN EDIT]</code> comments, with the AI's original kept as a comment between them, so <code>grep -rn "HUMAN EDIT"</code> lists every one. This site follows the same rule: a person's change to a page is wrapped in those markers in an HTML comment. Third-party code, such as the Binc Bluetooth library, keeps its own headers.</p>
+
+  <h2>AI interaction logs</h2>
+  <p>All plans and session logs are in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/ai-log">ai-log folder on GitHub</a>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Document</th></tr></thead>
+      <tbody>
+        <tr><td>2026-10-13</td><td><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/ai-log/2026-10-13_cp1_plan_approved.md">Checkpoint 1 plan</a></td></tr>
+        <tr><td>2026-10-13</td><td><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/ai-log/2026-10-13_cp1_session_log.md">Checkpoint 1 session log</a></td></tr>
+        <tr><td>2026-10-20</td><td><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/ai-log/2026-10-20_cp2_plan_approved.md">Checkpoint 2 plan</a></td></tr>
+        <tr><td>2026-10-20</td><td><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/ai-log/2026-10-20_cp2_session_log.md">Checkpoint 2 session log</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Checkpoint 3 logs are added to the folder as the work goes on.</p>
+
+  <!-- The team's own AI-interaction progress report is human-written. If it is published here,
+       add it inside a [HUMAN EDIT] ... [END HUMAN EDIT] comment pair. -->
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <p>This site is AI-generated (Claude, Anthropic) for ECSE 4235 PARMCO, Group 3. Any change made by a person is marked [HUMAN EDIT] in the page source.</p>
+    <p><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final">Project files on GitHub</a></p>
+  </div>
+</footer>
+</body>
+</html>

@@ -3,73 +3,137 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hardware | PARMCO Group 3</title>
-<meta name="description" content="Schematic, wiring, parts and sensor notes for the PARMCO motor, IR sensor and AS5600 encoder.">
+<title>Hardware · PARMCO</title>
+<meta name="description" content="PARMCO hardware: SN754410NE H-bridge, 4N25 fail-safe enable, Nema17 stepper and IR sensor wired to a Raspberry Pi 4.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="site">
-  <div class="wrap">
-    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
-    <nav><a href="index.html">Overview</a><a href="hardware.html" aria-current="page">Hardware</a><a href="software.html">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html">Credits</a></nav>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html"><strong>PARMCO</strong><span>ECSE 4235 · Group 3</span></a>
+    <nav class="site-nav" aria-label="Site">
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="hardware.html" aria-current="page">Hardware</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="app.html">App</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="process.html">AI process</a></li>
+        <li><a href="credits.html">Credits</a></li>
+      </ul>
+    </nav>
   </div>
 </header>
-<main class="wrap">
 
-<h1>Hardware</h1>
-<p class="lead">The circuit has a motor driver, an optocoupler enable, an IR sensor for speed and an AS5600 encoder for angle. The full schematic, wiring table, assembly instructions and parts list are in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/CP3/hardware/">hardware package</a>.</p>
+<main>
+  <h1>Hardware</h1>
+  <p class="lead">The motor circuit as built at Checkpoint 3: a Raspberry Pi 4 drives a Nema17 stepper through an SN754410NE H-bridge, enabled through a 4N25 optocoupler, with an IR sensor watching the propeller and an AS5600 magnetic encoder reading the shaft angle.</p>
 
-<h2>Schematic</h2>
-<figure>
-<img src="assets/schematic.png" alt="Schematic: Raspberry Pi 4 header connected to an SN754410NE H-bridge, 4N25 enable, IR sensor module U3, AS5600 encoder module U4 and the bench supply" width="1400">
-<figcaption>Checkpoint 3 schematic (AI-generated). The bench supply provides 5 V (VCC1) and 12 V (VCC2) to the H-bridge. Only the IR sensor and the encoder are powered from the RP4’s 3.3 V pin.</figcaption>
-</figure>
+  <figure>
+    <div class="schematic">
+      <a href="assets/schematic_cp3.svg"><img src="assets/schematic_cp3.svg" alt="Schematic of the Checkpoint 3 circuit, which adds the AS5600 encoder module U4 on 3.3 V, GPIO2 and GPIO3 to the Checkpoint 2 circuit: Raspberry Pi 4 header J1, resistors R1 to R4 to the SN754410NE step inputs, R5 and the 4N25 driving both enables with R6 pull-down, bypass capacitors C1 to C3, the Nema17 coils on outputs 1Y to 4Y, the bench supply, and the IR sensor module on 3.3 V and GPIO25."></a>
+    </div>
+    <figcaption>Checkpoint 3 schematic, drawn with schemdraw. Select it to open full size. The <a href="assets/schematic.svg">Checkpoint 2 schematic</a> is kept for comparison.</figcaption>
+  </figure>
 
-<h2>Main parts</h2>
-<table>
-<thead><tr><th>Part</th><th>Role</th></tr></thead>
-<tbody>
-<tr><td>Raspberry Pi 4 (RP4)</td><td>Runs the control program and the Bluetooth link; all GPIO goes through the class library</td></tr>
-<tr><td>SN754410NE H-bridge (U1)</td><td>Drives the two stepper coils; the built-in clamp diodes handle flyback current [1]</td></tr>
-<tr><td>4N25 optocoupler (U2)</td><td>Enable switch for the H-bridge, driven from GPIO24 through 330 Ω with a 10 kΩ pull-down</td></tr>
-<tr><td>Nema17 stepper (M1)</td><td>Turns the propeller; 400 half-steps per turn, 0.9° each</td></tr>
-<tr><td>IR sensor module (U3)</td><td>LM393 comparator; one pulse per blade on GPIO25</td></tr>
-<tr><td>AS5600 module (U4)</td><td>12-bit magnetic angle sensor on I2C (address 0x36)</td></tr>
-<tr><td>Bench supply (PS1)</td><td>5.0 V for VCC1 and 12.0 V for VCC2</td></tr>
-</tbody>
-</table>
+  <h2>Parts</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Ref</th><th>Part</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>U1</td><td>SN754410NE quad half-H driver</td><td>Two H-bridges, one per motor coil; 1 A per output</td></tr>
+        <tr><td>U2</td><td>4N25 optocoupler</td><td>On/off enable for U1, off whenever the Pi pin is low or floating</td></tr>
+        <tr><td>R1–R4</td><td>1 kΩ</td><td>Series protection on the four step inputs</td></tr>
+        <tr><td>R5</td><td>330 Ω</td><td>4N25 LED current, about 6.5 mA</td></tr>
+        <tr><td>R6</td><td>10 kΩ</td><td>Holds both U1 enables low when the 4N25 is off</td></tr>
+        <tr><td>C1, C2, C3</td><td>0.1 µF, 0.1 µF, 100 µF</td><td>Bypass at U1's supply pins and bulk capacitance on 12 V</td></tr>
+        <tr><td>U3</td><td>IR sensor module (LM393 comparator)</td><td>One pulse per propeller blade</td></tr>
+        <tr><td>M1</td><td>Nema17 stepper XY42STH34-0354A</td><td>1.8° per full step, 12 V, 0.35 A per phase</td></tr>
+        <tr><td>J1</td><td>Raspberry Pi 4 Model B</td><td>Runs the control program</td></tr>
+        <tr><td>PS1</td><td>Bench DC supply</td><td>5 V logic (VCC1) and 12 V motor (VCC2)</td></tr>
+      </tbody>
+    </table>
+  </div>
 
-<h2>Motor drive</h2>
-<p>The RP4 sets the four H-bridge inputs (GPIO17, 27, 22 and 23, through 1 kΩ resistors) to one of eight coil patterns in half-step mode. The 4N25 lets the RP4 switch both enable pins off, which removes all coil current. After a position move the motor rests with the coils off, held by the detent torque of the motor.</p>
+  <h2>The H-bridge</h2>
+  <p>Each of the SN754410's four outputs follows its input when its enable is high: a high input connects the output to 12 V, a low one to ground. Coil A sits between outputs 1Y and 2Y and coil B between 3Y and 4Y, so each coil has a full H-bridge and current can be driven through it either way.</p>
+  <p>The software steps through an eight-row table of input patterns, one row per step. This is <strong>half stepping</strong>: 400 steps per revolution, 0.9° per step. Going down the table turns one way and going up turns the other, and only one input changes per step.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="num">Index</th><th class="num">IN1</th><th class="num">IN2</th><th class="num">IN3</th><th class="num">IN4</th><th>Coils on</th></tr></thead>
+      <tbody>
+        <tr><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td>A+</td></tr>
+        <tr><td class="num">1</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td>A+ B+</td></tr>
+        <tr><td class="num">2</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td>B+</td></tr>
+        <tr><td class="num">3</td><td class="num">0</td><td class="num">1</td><td class="num">1</td><td class="num">0</td><td>A− B+</td></tr>
+        <tr><td class="num">4</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td>A−</td></tr>
+        <tr><td class="num">5</td><td class="num">0</td><td class="num">1</td><td class="num">0</td><td class="num">1</td><td>A− B−</td></tr>
+        <tr><td class="num">6</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>B−</td></tr>
+        <tr><td class="num">7</td><td class="num">1</td><td class="num">0</td><td class="num">0</td><td class="num">1</td><td>A+ B−</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The program starts on index 1, so two phases are on when the bridge is first enabled.</p>
 
-<h2>IR sensor</h2>
-<p>The IR module sits under the propeller and reads white tape on the underside of the blades, giving two pulses per revolution. Its output pulls up to its own supply, so it is powered from the RP4’s 3.3 V pin, never from 5 V.</p>
+  <h2>A fail-safe enable through the 4N25</h2>
+  <p>The specification requires the motor to be off whenever the Pi's enable pin is low or floating, including while the Pi boots. The circuit guarantees this in hardware:</p>
+  <ul>
+    <li><strong>GPIO24 low, floating or Pi unpowered:</strong> the 4N25 LED is dark, its transistor is off, and R6 holds both enables low (at most 0.2 V, below the 0.8 V threshold).</li>
+    <li><strong>GPIO24 high:</strong> about 6.5 mA flows through the LED and the transistor pulls the enables up toward 5 V. Only about 3% current transfer is needed; the 4N25 guarantees 20%.</li>
+    <li>R6 is essential: the SN754410 datasheet warns that an open input can drift up and enable the bridge.</li>
+    <li>GPIO24 defaults to pull-down at reset, so the LED stays dark through boot, and the software writes the pin low before making it an output.</li>
+  </ul>
+  <p>The enable is only ever on or off, never pulse-width modulated. All grounds are joined as the project requires, so the 4N25 provides the fail-safe enable rather than ground isolation.</p>
 
-<h2>AS5600 encoder</h2>
-<p>A small diametrically magnetised magnet on the end of the motor shaft turns over the AS5600 chip. The chip measures the direction of the magnetic field with a Hall array and reports a 12-bit angle, which is 0.088° per count. Nothing touches the magnet, so the encoder adds no load.</p>
-<table>
-<thead><tr><th>AS5600 pin</th><th>Connects to</th></tr></thead>
-<tbody>
-<tr><td>VCC</td><td>RP4 3.3 V, header pin 1</td></tr>
-<tr><td>GND</td><td>Header pin 9</td></tr>
-<tr><td>SDA</td><td>GPIO2, header pin 3</td></tr>
-<tr><td>SCL</td><td>GPIO3, header pin 5</td></tr>
-<tr><td>DIR</td><td>Header pin 25 (GND); fixes the counting direction</td></tr>
-<tr><td>OUT, PGO</td><td>Not connected</td></tr>
-</tbody>
-</table>
-<p>The air gap between the magnet and the chip is 0.5 to 3 mm, and the magnet has to be centred on the shaft. An off-centre magnet bends the angle reading, so we centre the magnet using the chip’s own magnet-strength readout (AGC and magnitude) and check the result against a printed protractor [2].</p>
-<div class="note"><strong>What went wrong here.</strong> At first the encoder read 3° to 6° low against the protractor at every target. The AI proposed a software correction map, and we fixed the mounting instead. Details are on the <a href="ai-process.html">AI process</a> page.</div>
+  <h2>Supplies and current</h2>
+  <ul>
+    <li>Both H-bridge supplies come from the bench supply: 5 V to VCC1 (pin 16) and 12 V to VCC2 (pin 8). Nothing in the motor circuit is powered from the Pi.</li>
+    <li>The motor coils are about 34 Ω. After the bridge's roughly 2 V drop, each energised coil carries about 0.29 A, so the 12 V supply reads about 0.55–0.65 A with two phases on.</li>
+    <li>Disabled, U1 draws at most 5 mA from 12 V, well under the 0.05 A check limit.</li>
+    <li>The SN754410 has clamp diodes on every output, rated to 1 A, which absorb the coil flyback current. The datasheet's own stepper circuit uses no external diodes, and neither does this one.</li>
+  </ul>
 
-<h2>References</h2>
-<ol class="refs">
-<li>Texas Instruments, “SN754410 Quadruple Half-H Driver,” SLRS007C.</li>
-<li>ams OSRAM, “AS5600 12-Bit Programmable Contactless Potentiometer,” datasheet.</li>
-</ol>
+  <h2>The IR sensor</h2>
+  <p>The IR module shines infrared light at the propeller; a blade passing in front reflects it back, and an LM393 comparator switches the digital output. The two-blade propeller gives two pulses per revolution.</p>
+  <ul>
+    <li>The module is powered from the Pi's 3.3 V pin, the one part of the circuit that is. Its output is pulled up to its own supply, so 5 V would put 5 V on GPIO25 and could damage the Pi.</li>
+    <li>The software samples GPIO25 every 1 ms and times whole revolutions; see <a href="software.html#ir">Software</a>.</li>
+  </ul>
 
+  <h2>Wiring overview</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Pi header pin</th><th>Signal</th><th>Goes to</th></tr></thead>
+      <tbody>
+        <tr><td>11</td><td>GPIO17</td><td>R1 → U1 pin 2 (1A)</td></tr>
+        <tr><td>13</td><td>GPIO27</td><td>R2 → U1 pin 7 (2A)</td></tr>
+        <tr><td>15</td><td>GPIO22</td><td>R3 → U1 pin 10 (3A)</td></tr>
+        <tr><td>16</td><td>GPIO23</td><td>R4 → U1 pin 15 (4A)</td></tr>
+        <tr><td>18</td><td>GPIO24</td><td>R5 → 4N25 LED; 4N25 emitter → U1 pins 1 and 9 (enables)</td></tr>
+        <tr><td>14</td><td>GND</td><td>Common ground rail</td></tr>
+        <tr><td>17, 20, 22</td><td>3.3 V, GND, GPIO25</td><td>IR module VCC, GND, DO</td></tr>
+        <tr><td>1, 9</td><td>3.3 V, GND</td><td>AS5600 VCC, GND</td></tr>
+        <tr><td>3, 5</td><td>GPIO2, GPIO3</td><td>AS5600 SDA, SCL</td></tr>
+        <tr><td>25</td><td>GND</td><td>AS5600 DIR (fixes the counting direction)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Motor coil A connects to U1 pins 3 and 6, coil B to pins 11 and 14. U1 pins 4, 5, 12 and 13 go to ground. The Pi's 5 V pins are never used. The complete wiring table, assembly instructions and datasheet calculations are in the <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final/CP3/hardware">CP3 hardware folder</a> and its <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/blob/main/Projects/Final/CP3/hardware/PARMCO_CP3_Hardware_Package.pdf">hardware package PDF</a>.</p>
+
+  <h2>The AS5600 encoder</h2>
+  <p>The AS5600 on the class motor stand reads a magnet on the end of the motor shaft. It gives a 12-bit angle, 0.088° per count, against the motor's 0.9° half step. It is powered from the Pi's 3.3 V pin, never 5 V, because its I²C pull-ups go to its own supply.</p>
+  <ul>
+    <li><strong>Reading it.</strong> The class library's I²C module was tried first, as in the library's example, but its first call never returned on this Pi. The program now drives the I²C lines itself through the class library's GPIO calls (open-drain: a line is pulled low or let go, never driven high). Every acknowledge is checked and every wait has a time limit, so a wiring fault gives an error message instead of a hang.</li>
+    <li><strong>Magnet.</strong> The encoder reports whether the magnet is too weak or too strong and its gain (AGC). At first it said "too weak" with the gain at its maximum; moving the magnet closer cleared that (AGC 114). Angle targets then landed 3–6° past the protractor marks while the step count agreed with the protractor, which pointed to an off-centre magnet; repositioning the parts fixed it.</li>
+    <li><strong>Direction.</strong> The encoder sees the shaft from the other end, so its angle runs the opposite way to the protractor; the program flips the sign (checked with a 90° hand turn).</li>
+  </ul>
 </main>
-<footer class="site">
-  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <p>This site is AI-generated (Claude, Anthropic) for ECSE 4235 PARMCO, Group 3. Any change made by a person is marked [HUMAN EDIT] in the page source.</p>
+    <p><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final">Project files on GitHub</a></p>
+  </div>
 </footer>
 </body>
 </html>

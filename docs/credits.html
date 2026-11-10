@@ -3,43 +3,111 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Credits | PARMCO Group 3</title>
-<meta name="description" content="Libraries, tools and licences used in the PARMCO project.">
+<title>Credits · PARMCO</title>
+<meta name="description" content="Libraries, tools and datasheets used by PARMCO, with their licences.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="site">
-  <div class="wrap">
-    <a class="brand" href="index.html">PARMCO <span>Group 3</span></a>
-    <nav><a href="index.html">Overview</a><a href="hardware.html">Hardware</a><a href="software.html">Software</a><a href="app.html">App</a><a href="tests.html">Tests</a><a href="ai-process.html">AI process</a><a href="credits.html" aria-current="page">Credits</a></nav>
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="index.html"><strong>PARMCO</strong><span>ECSE 4235 · Group 3</span></a>
+    <nav class="site-nav" aria-label="Site">
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="hardware.html">Hardware</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="app.html">App</a></li>
+        <li><a href="tests.html">Tests</a></li>
+        <li><a href="process.html">AI process</a></li>
+        <li><a href="credits.html" aria-current="page">Credits</a></li>
+      </ul>
+    </nav>
   </div>
 </header>
-<main class="wrap">
 
-<h1>Credits and libraries</h1>
-<p class="lead">The project code was written by Claude. These are the libraries and tools it uses, with their licences. The full table is in the software documentation.</p>
-<table>
-<thead><tr><th>Name</th><th>Licence</th><th>Used for</th></tr></thead>
-<tbody>
-<tr><td>ECSE 4235 class library (libE4235)</td><td>Provided by the instructor</td><td>All RP4 GPIO access, in assembly and C</td></tr>
-<tr><td><a href="https://github.com/weliem/bluez_inc">Binc (bluez_inc)</a> by Martijn van Welie</td><td>MIT</td><td>Bluetooth peripheral on the RP4, vendored unmodified</td></tr>
-<tr><td>GLib / GIO</td><td>LGPL-2.1-or-later</td><td>Event loop and D-Bus client used by Binc</td></tr>
-<tr><td>BlueZ</td><td>GPL-2.0</td><td>The Linux Bluetooth stack on Raspberry Pi OS</td></tr>
-<tr><td>SwiftUI, CoreBluetooth</td><td>Apple SDK</td><td>The iPhone app</td></tr>
-<tr><td><a href="https://github.com/yonaskolb/XcodeGen">XcodeGen</a></td><td>MIT</td><td>Generates the Xcode project from <code>project.yml</code></td></tr>
-</tbody>
-</table>
-<h2>Datasheets</h2>
-<ul>
-<li>Texas Instruments, SN754410 Quadruple Half-H Driver, SLRS007C.</li>
-<li>ams OSRAM, AS5600 12-Bit Programmable Contactless Potentiometer.</li>
-</ul>
-<h2>Course</h2>
-<p>ECSE 4235, PARMCO (Phone App RP4 Motor Control) Final Project, Fall 2026, The University of Georgia.</p>
+<main>
+  <h1>Credits</h1>
+  <p class="lead">PARMCO builds on the libraries and tools below. Each is used under its own licence.</p>
 
+  <h2>Libraries and tools</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Name</th><th>Licence</th><th>Used by</th><th>What it does for PARMCO</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>ECSE 4235 class library <code>libE4235</code></td>
+          <td>Class library, provided by the instructor and class (not AI)</td>
+          <td>Pi program: <code>hbridge.s</code>, IR code</td>
+          <td>ARM assembly routines that memory-map the GPIO registers and set pin functions and levels (<code>E4235_Init</code>, <code>E4235_Select</code>, <code>E4235_Write</code>, <code>E4235_Read</code>). The project requires all GPIO access to go through it.</td>
+        </tr>
+        <tr>
+          <td>Binc (<a href="https://github.com/weliem/bluez_inc">weliem/bluez_inc</a>), by Martijn van Welie; vendored unmodified at commit <code>157c604</code></td>
+          <td>MIT</td>
+          <td>Pi program: <code>ble.c</code></td>
+          <td>Publishes the advertisement, GATT service and characteristics as the D-Bus objects BlueZ needs for the peripheral role, and calls the program when the phone writes or subscribes.</td>
+        </tr>
+        <tr>
+          <td>GLib / GIO</td>
+          <td>LGPL-2.1-or-later</td>
+          <td>Pi program, Binc</td>
+          <td>Event loop, timers and the D-Bus client Binc is built on.</td>
+        </tr>
+        <tr>
+          <td>BlueZ (<code>bluetoothd</code>)</td>
+          <td>GPL-2.0, part of Raspberry Pi OS</td>
+          <td>System service</td>
+          <td>The Linux Bluetooth stack: runs the radio and turns the program's D-Bus objects into a real BLE advertisement and GATT server.</td>
+        </tr>
+        <tr>
+          <td>POSIX threads, glibc</td>
+          <td>LGPL</td>
+          <td>Pi program</td>
+          <td>Threads, mutexes, the monotonic clock and real-time scheduling.</td>
+        </tr>
+        <tr>
+          <td>SwiftUI</td>
+          <td>Apple SDK</td>
+          <td>iPhone app</td>
+          <td>The user interface.</td>
+        </tr>
+        <tr>
+          <td>CoreBluetooth</td>
+          <td>Apple SDK</td>
+          <td>iPhone app</td>
+          <td>The BLE central role: scanning, connecting, writing and notifications. The only way an iOS app can use Bluetooth Low Energy.</td>
+        </tr>
+        <tr>
+          <td>XcodeGen (<a href="https://github.com/yonaskolb/XcodeGen">yonaskolb/XcodeGen</a>)</td>
+          <td>MIT</td>
+          <td>Build tool only</td>
+          <td>Generates the Xcode project from <code>project.yml</code>, so the project stays reviewable as text.</td>
+        </tr>
+        <tr>
+          <td>schemdraw, Python-Markdown, headless Google Chrome</td>
+          <td>MIT, BSD, Google terms</td>
+          <td>Documentation only</td>
+          <td>Draw the schematic and build the hardware PDF.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Datasheets and references</h2>
+  <ul>
+    <li>Texas Instruments, <em>SN754410 Quadruple Half-H Driver</em>, SLRS007C (revised January 2015).</li>
+    <li>Vishay, <em>4N25, 4N26, 4N27, 4N28 Optocoupler</em>, document 83725 rev. 1.8.</li>
+    <li><em>ECSE 4235 PARMCO</em> project specification v1.0, for the motor ratings and the test procedures.</li>
+  </ul>
+
+  <h2>Authorship</h2>
+  <p>The code, documentation and this website were written by Claude (Anthropic) through Claude Code, as the course requires; see <a href="process.html">AI process</a>. Hardware was built and every test was run by Group 3.</p>
 </main>
-<footer class="site">
-  <div class="wrap">ECSE 4235, Fall 2026, The University of Georgia. Griffin Hammond and Aakash Patel. Written by Claude (AI) and reviewed by the team. <a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3">Class repository</a></div>
+
+<footer class="site-footer">
+  <div class="inner">
+    <p>This site is AI-generated (Claude, Anthropic) for ECSE 4235 PARMCO, Group 3. Any change made by a person is marked [HUMAN EDIT] in the page source.</p>
+    <p><a href="https://github.com/Herring-UGAECSE-4235-F26/Group-3/tree/main/Projects/Final">Project files on GitHub</a></p>
+  </div>
 </footer>
 </body>
 </html>
